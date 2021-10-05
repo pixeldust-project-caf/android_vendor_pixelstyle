@@ -15,3 +15,5 @@
 #
 #
 
+PRODUCT_PACKAGES += \
+    PixeldustSystemUI
