@@ -1,3 +1,6 @@
+soong_namespace {
+    imports: ["hardware/google/interfaces"],
+}
 android_library {
     name: "PixeldustSystemUI-core",
     srcs: [
@@ -13,6 +16,7 @@ android_library {
         "colorkt",
         "themelib",
         "SystemUI-core",
+        "com.google.hardware.pixel.display-V3-java",
     ],
     manifest: "AndroidManifest.xml",
 

@@ -10,9 +10,11 @@ import android.os.PowerManager;
 
 import androidx.annotation.Nullable;
 
+import com.pixeldust.android.systemui.biometrics.PixeldustUdfpsHbmProvider;
 import com.pixeldust.android.systemui.theme.ThemeOverlayControllerPixeldust;
 
 import com.android.keyguard.KeyguardViewController;
+import com.android.systemui.biometrics.UdfpsHbmProvider;
 import com.android.systemui.broadcast.BroadcastDispatcher;
 import com.android.systemui.dagger.qualifiers.Background;
 import com.android.systemui.dagger.qualifiers.Main;
@@ -191,4 +193,9 @@ public abstract class SystemUIPixeldustModule {
 
     @Binds
     abstract ThemeOverlayController provideThemeOverlayController(ThemeOverlayControllerPixeldust themeOverlayController);
+
+    @Provides
+    static UdfpsHbmProvider provideUdfpsHbmProvider() {
+        return new PixeldustUdfpsHbmProvider();
+    }
 }
