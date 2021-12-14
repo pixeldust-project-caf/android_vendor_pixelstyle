@@ -209,10 +209,9 @@ public abstract class SystemUIPixeldustModule {
     @Binds
     abstract ThemeOverlayController provideThemeOverlayController(ThemeOverlayControllerPixeldust themeOverlayController);
 
-    @Provides
-    static UdfpsHbmProvider provideUdfpsHbmProvider() {
-        return new PixeldustUdfpsHbmProvider();
-    }
+    @Binds
+    @SysUISingleton
+    abstract UdfpsHbmProvider bindUdfpsHbmProvider(PixeldustUdfpsHbmProvider udfpsHbmProvider);
 
     // Google
     @Provides
