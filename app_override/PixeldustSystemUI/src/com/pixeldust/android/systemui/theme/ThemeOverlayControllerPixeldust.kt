@@ -25,6 +25,7 @@ import android.os.Handler
 import android.os.UserManager
 import android.provider.Settings
 import android.util.TypedValue
+import com.android.systemui.Dependency
 import com.android.systemui.broadcast.BroadcastDispatcher
 import com.android.systemui.dagger.SysUISingleton
 import com.android.systemui.dagger.qualifiers.Background
@@ -69,7 +70,6 @@ class ThemeOverlayControllerPixeldust @Inject constructor(
     dumpManager: DumpManager,
     featureFlags: FeatureFlags,
     wakefulnessLifecycle: WakefulnessLifecycle,
-    private val tunerService: TunerService,
 ) : ThemeOverlayController(
     context,
     broadcastDispatcher,
@@ -95,9 +95,10 @@ class ThemeOverlayControllerPixeldust @Inject constructor(
     private var whiteLuminance: Double = Double.MIN_VALUE
     private var linearLightness: Boolean = false
     private var customColor: Boolean = false
+    private val mTunerService: TunerService = Dependency.get(TunerService::class.java)
 
     override fun start() {
-        tunerService.addTunable(this, PREF_COLOR_OVERRIDE, PREF_WHITE_LUMINANCE,
+        mTunerService.addTunable(this, PREF_COLOR_OVERRIDE, PREF_WHITE_LUMINANCE,
                 PREF_CHROMA_FACTOR, PREF_ACCURATE_SHADES, PREF_LINEAR_LIGHTNESS, PREF_CUSTOM_COLOR)
         super.start()
     }
