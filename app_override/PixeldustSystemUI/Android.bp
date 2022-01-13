@@ -21,7 +21,6 @@ android_library {
         "res-smartspace",
     ],
     static_libs: [
-        "backgesture-google",
         "colorkt",
         "gamedashboard-sysui-google",
         "smartspace-google",
