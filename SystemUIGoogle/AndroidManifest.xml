@@ -63,6 +63,21 @@
     <protected-broadcast android:name="com.breel.wallpapers.NOTIFICATION_RECEIVED"/>
     <uses-permission android:name="com.google.android.ambientindication.permission.AMBIENT_INDICATION"/>
 
+    <!-- Pixeldust qs tiles -->
+
+    <!-- Sync tile -->
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+
+    <!-- VPN tile -->
+    <uses-permission android:name="android.permission.NETWORK_STACK" />
+
+    <!-- DataSwitch tile -->
+    <uses-permission android:name="android.permission.WRITE_APN_SETTINGS" />
+
+    <!-- Locale tile -->
+    <uses-permission android:name="android.permission.CHANGE_CONFIGURATION" />
+
     <application>
         <provider android:name=".keyguard.KeyguardSliceProvider" tools:node="remove" />
         <service android:exported="true" android:name="com.google.android.systemui.elmyra.ElmyraServiceProxy" android:permission="com.google.android.elmyra.permission.CONFIGURE_ASSIST_GESTURE"/>

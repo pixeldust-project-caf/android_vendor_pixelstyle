@@ -50,19 +50,38 @@ import com.android.systemui.qs.tiles.UiModeNightTile;
 import com.android.systemui.qs.tiles.WifiTile;
 import com.android.systemui.qs.tiles.WorkModeTile;
 import com.android.systemui.util.leak.GarbageMonitor;
+
 import com.google.android.systemui.qs.tiles.BatterySaverTileGoogle;
 import com.google.android.systemui.qs.tiles.ReverseChargingTile;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
+// Pixeldust qs tiles
+import com.pixeldust.android.systemui.qs.tiles.AODTile;
+import com.pixeldust.android.systemui.qs.tiles.CaffeineTile;
+import com.pixeldust.android.systemui.qs.tiles.DataSwitchTile;
+import com.pixeldust.android.systemui.qs.tiles.LocaleTile;
+//import com.pixeldust.android.systemui.qs.tiles.PDSettingsTile;
+import com.pixeldust.android.systemui.qs.tiles.ScreenshotTile;
+import com.pixeldust.android.systemui.qs.tiles.SyncTile;
+import com.pixeldust.android.systemui.qs.tiles.VpnTile;
 
 import dagger.Lazy;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
 
 @SysUISingleton
 public class QSFactoryImplGoogle extends QSFactoryImpl {
     private final Provider<BatterySaverTileGoogle> mBatterySaverTileGoogleProvider;
     private final Provider<ReverseChargingTile> mReverseChargingTileProvider;
+
+    private final Provider<CaffeineTile> mCaffeineTileProvider;
+    private final Provider<SyncTile> mSyncTileProvider;
+    private final Provider<VpnTile> mVpnTileProvider;
+    private final Provider<AODTile> mAODTileProvider;
+    private final Provider<DataSwitchTile> mDataSwitchTileProvider;
+    //private final Provider<PDSettingsTile> mPDSettingsTileProvider;
+    private final Provider<LocaleTile> mLocaleTileProvider;
+    private final Provider<ScreenshotTile> mScreenshotTileProvider;
 
     @Inject
     public QSFactoryImplGoogle(
@@ -97,6 +116,14 @@ public class QSFactoryImplGoogle extends QSFactoryImpl {
             Provider<QRCodeScannerTile> qrCodeScannerTileProvider,
             Provider<OneHandedModeTile> oneHandedModeTileProvider,
             Provider<ColorCorrectionTile> colorCorrectionTileProvider,
+            Provider<AODTile> aodTileProvider,
+            Provider<CaffeineTile> caffeineTileProvider,
+            Provider<DataSwitchTile> dataSwitchTileProvider,
+            Provider<LocaleTile> localeTileProvider,
+            //Provider<PDSettingsTile> pdSettingsTileProvider,
+            Provider<ScreenshotTile> screenshotTileProvider,
+            Provider<SyncTile> syncTileProvider,
+            Provider<VpnTile> vpnTileProvider,
             Provider<ReverseChargingTile> reverseChargingTileProvider) {
         super(qsHostLazy,
                 customTileBuilderProvider,
@@ -129,16 +156,46 @@ public class QSFactoryImplGoogle extends QSFactoryImpl {
                 qrCodeScannerTileProvider,
                 oneHandedModeTileProvider,
                 colorCorrectionTileProvider);
+
+        // Pixeldust qs tiles
+        mAODTileProvider = aodTileProvider;
+        mCaffeineTileProvider = caffeineTileProvider;
+        mDataSwitchTileProvider = dataSwitchTileProvider;
+        mLocaleTileProvider = localeTileProvider;
+        //mPDSettingsTileProvider = pdSettingsTileProvider;
+        mScreenshotTileProvider = screenshotTileProvider;
+        mSyncTileProvider = syncTileProvider;
+        mVpnTileProvider = vpnTileProvider;
+
         mReverseChargingTileProvider = reverseChargingTileProvider;
         mBatterySaverTileGoogleProvider = batterySaverTileGoogleProvider;
     }
 
     @Override
     public final QSTileImpl createTileInternal(String str) {
-        if (str.equals("reverse")) {
-            return mReverseChargingTileProvider.get();
-        } else if (str.equals("battery")) {
-            return mBatterySaverTileGoogleProvider.get();
+        switch (str) {
+            case "reverse":
+                return mReverseChargingTileProvider.get();
+            case "battery":
+                return mBatterySaverTileGoogleProvider.get();
+            case "aod":
+                return mAODTileProvider.get();
+            case "caffeine":
+                return mCaffeineTileProvider.get();
+            case "dataswitch":
+                return mDataSwitchTileProvider.get();
+            case "locale":
+                return mLocaleTileProvider.get();
+            /*case "pixeldust_settings":
+                return mPDSettingsTileProvider.get();
+            */
+            case "screenshot":
+                return mScreenshotTileProvider.get();
+            case "sync":
+                return mSyncTileProvider.get();
+            case "vpn":
+                return mVpnTileProvider.get();
+            default: // Do nothing
         }
         return super.createTileInternal(str);
     }
