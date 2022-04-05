@@ -3,6 +3,7 @@ android_library {
     manifest: "AndroidManifest.xml",
     resource_dirs: [
         "res",
+        "res-pixeldust",
     ],
     static_libs: [
         "SystemUI-core",
