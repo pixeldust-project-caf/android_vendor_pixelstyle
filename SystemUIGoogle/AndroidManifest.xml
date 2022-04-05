@@ -76,6 +76,21 @@
     <uses-permission android:name="android.permission.ROTATE_SURFACE_FLINGER"/>
     <uses-permission android:name="android.permission.WAKEUP_SURFACE_FLINGER"/>
 
+    <!-- Pixeldust qs tiles -->
+
+    <!-- Sync tile -->
+    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+
+    <!-- VPN tile -->
+    <uses-permission android:name="android.permission.NETWORK_STACK" />
+
+    <!-- DataSwitch tile -->
+    <uses-permission android:name="android.permission.WRITE_APN_SETTINGS" />
+
+    <!-- Locale tile -->
+    <uses-permission android:name="android.permission.CHANGE_CONFIGURATION" />
+
     <application>
         <provider
             android:name="com.android.systemui.keyguard.KeyguardSliceProvider"
