@@ -1,16 +1,24 @@
 android_library {
-    name: "SystemUIGoogle-core",
-    srcs: [
-        "src/**/*.kt",
-        "src/**/*.java",
-        "src/**/*.aidl",
-    ],
+    name: "SystemUIGoogle-res",
+    manifest: "AndroidManifest.xml",
     resource_dirs: [
         "res",
         "res-pixeldust",
     ],
     static_libs: [
         "SystemUI-core",
+    ],
+}
+
+android_library {
+    name: "SystemUIGoogle-core",
+    srcs: [
+        "src/**/*.kt",
+        "src/**/*.java",
+        "src/**/*.aidl",
+    ],
+    static_libs: [
+        "SystemUIGoogle-res",
         "tensorflowlite_java",
         "android.frameworks.stats-V1-java",
         "vendor-pixelatoms-java",
