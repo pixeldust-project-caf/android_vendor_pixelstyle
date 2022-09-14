@@ -91,6 +91,9 @@
     <!-- Locale tile -->
     <uses-permission android:name="android.permission.CHANGE_CONFIGURATION" />
 
+    <!-- Ambient pulse event -->
+    <protected-broadcast android:name="com.android.systemui.doze.pulse" />
+
     <application>
         <provider
             android:name="com.android.systemui.keyguard.KeyguardSliceProvider"

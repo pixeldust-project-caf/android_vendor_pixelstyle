@@ -29,6 +29,9 @@ import com.android.keyguard.KeyguardUpdateMonitor;
 import com.android.keyguard.KeyguardUpdateMonitorCallback;
 import com.android.systemui.Dependency;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
 public final class AmbientIndicationService extends BroadcastReceiver {
     public AlarmManager mAlarmManager;
     public AmbientIndicationContainer mAmbientIndicationContainer;
@@ -46,6 +49,9 @@ public final class AmbientIndicationService extends BroadcastReceiver {
             mAmbientIndicationContainer.setAmbientMusic(null, null, null, 0, false, null);
         }
     };
+
+    private CharSequence lastTitle;
+    private Instant lastTime;
 
     public AmbientIndicationService(Context context, AmbientIndicationContainer ambientIndicationContainer, AlarmManager alarmManager) {
         mContext = context;
@@ -88,9 +94,19 @@ public final class AmbientIndicationService extends BroadcastReceiver {
                 boolean booleanExtra = intent.getBooleanExtra("com.google.android.ambientindication.extra.SKIP_UNLOCK", false);
                 int intExtra2 = intent.getIntExtra("com.google.android.ambientindication.extra.ICON_OVERRIDE", 0);
                 String stringExtra = intent.getStringExtra("com.google.android.ambientindication.extra.ICON_DESCRIPTION");
-                mAmbientIndicationContainer.setAmbientMusic(intent.getCharSequenceExtra("com.google.android.ambientindication.extra.TEXT"), (PendingIntent) intent.getParcelableExtra("com.google.android.ambientindication.extra.OPEN_INTENT"), (PendingIntent) intent.getParcelableExtra("com.google.android.ambientindication.extra.FAVORITING_INTENT"), intExtra2, booleanExtra, stringExtra);
+                CharSequence newTitle = intent.getCharSequenceExtra("com.google.android.ambientindication.extra.TEXT");
+                mAmbientIndicationContainer.setAmbientMusic(newTitle, (PendingIntent) intent.getParcelableExtra("com.google.android.ambientindication.extra.OPEN_INTENT"), (PendingIntent) intent.getParcelableExtra("com.google.android.ambientindication.extra.FAVORITING_INTENT"), intExtra2, booleanExtra, stringExtra);
                 mAlarmManager.setExact(2, SystemClock.elapsedRealtime() + min, "AmbientIndication", mHideIndicationListener, null);
-                Log.i("AmbientIndication", "Showing ambient indication.");
+                // Trigger an ambient pulse event only if a new title has been recognized
+                // or if the same title is played again after more than 10 minutes
+                if (!newTitle.equals(lastTitle)) {
+                    lastTitle = newTitle;
+                    lastTime = Instant.now();
+                    sendPulse(newTitle);
+                } else if (ChronoUnit.MILLIS.between(lastTime, Instant.now()) > 600000) {
+                    lastTime = Instant.now();
+                    sendPulse(newTitle);
+                }
                 return;
             }
             return;
@@ -98,6 +114,12 @@ public final class AmbientIndicationService extends BroadcastReceiver {
         mAlarmManager.cancel(mHideIndicationListener);
         mAmbientIndicationContainer.setAmbientMusic(null, null, null, 0, false, null);
         Log.i("AmbientIndication", "Hiding ambient indication.");
+    }
+
+    void sendPulse(CharSequence title) {
+        mContext.sendBroadcastAsUser(new Intent("com.android.systemui.doze.pulse"),
+            new UserHandle(UserHandle.USER_CURRENT));
+        Log.i("AmbientIndication", "Showing ambient doze pulse for: " + title);
     }
 
     boolean isForCurrentUser() {
