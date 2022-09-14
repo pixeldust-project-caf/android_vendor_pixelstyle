@@ -75,6 +75,9 @@ public class AmbientIndicationService extends BroadcastReceiver {
                 String stringExtra = intent.getStringExtra("com.google.android.ambientindication.extra.ICON_DESCRIPTION");
                 mAmbientIndicationContainer.setAmbientMusic(intent.getCharSequenceExtra("com.google.android.ambientindication.extra.TEXT"), (PendingIntent) intent.getParcelableExtra("com.google.android.ambientindication.extra.OPEN_INTENT"), (PendingIntent) intent.getParcelableExtra("com.google.android.ambientindication.extra.FAVORITING_INTENT"), intExtra, booleanExtra, stringExtra);
                 mAlarmManager.setExact(2, SystemClock.elapsedRealtime() + min, "AmbientIndication", mHideIndicationListener, null);
+                // Trigger an ambient pulse event
+                mContext.sendBroadcastAsUser(new Intent("com.android.systemui.doze.pulse"),
+                    new UserHandle(UserHandle.USER_CURRENT));
                 Log.i("AmbientIndication", "Showing ambient indication.");
             }
         }
