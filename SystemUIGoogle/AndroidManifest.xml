@@ -78,6 +78,9 @@
     <!-- Locale tile -->
     <uses-permission android:name="android.permission.CHANGE_CONFIGURATION" />
 
+    <!-- Ambient pulse event -->
+    <protected-broadcast android:name="com.android.systemui.doze.pulse" />
+
     <application>
         <provider android:name=".keyguard.KeyguardSliceProvider" tools:node="remove" />
         <service android:exported="true" android:name="com.google.android.systemui.elmyra.ElmyraServiceProxy" android:permission="com.google.android.elmyra.permission.CONFIGURE_ASSIST_GESTURE"/>
