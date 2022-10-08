@@ -145,6 +145,12 @@
         android:order="-45"
         android:title="@string/screen_locking_sounds_title" />
 
+    <!-- Screenshot sound -->
+    <SwitchPreference
+        android:key="screenshot_shutter_sound"
+        android:title="@string/screenshot_shutter_sound_title"
+        android:order="-43"/>
+
     <SwitchPreference
         android:key="charging_sounds"
         android:order="-40"
