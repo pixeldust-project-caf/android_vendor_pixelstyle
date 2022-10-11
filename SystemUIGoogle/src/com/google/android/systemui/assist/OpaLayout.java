@@ -24,12 +24,17 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.database.ContentObserver;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.os.Trace;
+import android.os.UserHandle;
+import android.provider.Settings;
 import android.util.ArraySet;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -57,8 +62,10 @@ import com.google.android.systemui.elmyra.sensors.GestureSensor;
 
 import java.util.ArrayList;
 
-
 public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackEffect {
+    private static final int OPA_FADE_IN_DURATION = 50;
+    private static final int OPA_FADE_OUT_DURATION = 250;
+
     private final Interpolator HOME_DISAPPEAR_INTERPOLATOR;
     private final ArrayList<View> mAnimatedViews;
     private final ArraySet<Animator> mCurrentAnimators;
@@ -76,7 +83,6 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
     private AnimatorSet mGestureLineSet;
     private int mGestureState;
     private View mGreen;
-    private ImageView mHalo;
     private KeyButtonView mHome;
     private int mHomeDiameter;
     private boolean mIsPressed;
@@ -93,9 +99,13 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
     private int mTouchDownX;
     private int mTouchDownY;
     private ImageView mWhite;
-    private ImageView mWhiteCutout;
     private boolean mWindowVisible;
     private View mYellow;
+
+    private Context mContext;
+    private Handler mHandler;
+    private SettingsObserver mSettingsObserver;
+    private boolean mAllowAnimation = true;
 
     public OpaLayout(Context context) {
         this(context, null);
@@ -116,6 +126,7 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
         mRetract = () -> {
             cancelCurrentAnimation("retract");
             startRetractAnimation();
+            hideAllOpa();
         };
         mOverviewProxyListener = new OverviewProxyService.OverviewProxyListener() {
             @Override
@@ -128,6 +139,9 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
                 startDiamondAnimation();
             }
         };
+        mContext = context;
+        mHandler = new Handler();
+        mSettingsObserver = new SettingsObserver(mHandler);
     }
 
     public OpaLayout(Context context, AttributeSet attributeSet, int i) {
@@ -143,22 +157,16 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
         mYellow = findViewById(R.id.yellow);
         mGreen = findViewById(R.id.green);
         mWhite = (ImageView) findViewById(R.id.white);
-        mWhiteCutout = (ImageView) findViewById(R.id.white_cutout);
-        mHalo = (ImageView) findViewById(R.id.halo);
         mHome = (KeyButtonView) findViewById(R.id.home_button);
-        mHalo.setImageDrawable(KeyButtonDrawable.create(new ContextThemeWrapper(getContext(), R.style.DualToneLightTheme), new ContextThemeWrapper(getContext(), R.style.DualToneDarkTheme), R.drawable.halo, true, null));
         mHomeDiameter = mResources.getDimensionPixelSize(R.dimen.opa_disabled_home_diameter);
-        Paint paint = new Paint();
-        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
-        mWhiteCutout.setLayerType(2, paint);
         mAnimatedViews.add(mBlue);
         mAnimatedViews.add(mRed);
         mAnimatedViews.add(mYellow);
         mAnimatedViews.add(mGreen);
         mAnimatedViews.add(mWhite);
-        mAnimatedViews.add(mWhiteCutout);
-        mAnimatedViews.add(mHalo);
         mOverviewProxyService = (OverviewProxyService) Dependency.get(OverviewProxyService.class);
+        mSettingsObserver.observe();
+        hideAllOpa();
     }
 
     @Override
@@ -191,9 +199,38 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
     @Override
     public boolean onInterceptTouchEvent(MotionEvent motionEvent) {
         boolean z;
-        if (getOpaEnabled() && ValueAnimator.areAnimatorsEnabled() && mGestureState == 0) {
+        if (allowAnimations() && ValueAnimator.areAnimatorsEnabled() && mGestureState == 0) {
             int action = motionEvent.getAction();
-            if (action == 0) {
+            if (action != 0) {
+                if (action != 1) {
+                    if (action != 2) {
+                        if (action != 3) {
+                            return false;
+                        }
+                    } else {
+                        final float quickStepTouchSlopPx = QuickStepContract.getQuickStepTouchSlopPx(getContext());
+                        if (Math.abs(motionEvent.getRawX() - mTouchDownX) > quickStepTouchSlopPx || Math.abs(motionEvent.getRawY() - mTouchDownY) > quickStepTouchSlopPx) {
+                            abortCurrentGesture();
+                            return false;
+                        }
+                        return false;
+                    }
+                }
+                if (mDiamondAnimationDelayed) {
+                    if (mIsPressed) {
+                        postDelayed(mRetract, 200);
+                    }
+                } else if (mAnimationState == 1) {
+                    removeCallbacks(mRetract);
+                    postDelayed(mRetract, 100 - (SystemClock.elapsedRealtime() - mStartTime));
+                    removeCallbacks(mDiamondAnimation);
+                    cancelLongPress();
+                    return false;
+                } else if (mIsPressed) {
+                    mRetract.run();
+                }
+                mIsPressed = false;
+            } else {
                 mTouchDownX = (int) motionEvent.getRawX();
                 mTouchDownY = (int) motionEvent.getRawY();
                 if (mCurrentAnimators.isEmpty()) {
@@ -215,31 +252,6 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
                     mDiamondAnimationDelayed = true;
                     postDelayed(mDiamondAnimation, ViewConfiguration.getTapTimeout());
                 }
-            } else {
-                if (action != 1) {
-                    if (action == 2) {
-                        float quickStepTouchSlopPx = QuickStepContract.getQuickStepTouchSlopPx(getContext());
-                        if (Math.abs(motionEvent.getRawX() - mTouchDownX) > quickStepTouchSlopPx || Math.abs(motionEvent.getRawY() - mTouchDownY) > quickStepTouchSlopPx) {
-                            abortCurrentGesture();
-                            return false;
-                        }
-                    }
-                    return false;
-                }
-                if (mDiamondAnimationDelayed) {
-                    if (mIsPressed) {
-                        postDelayed(mRetract, 200L);
-                    }
-                } else if (mAnimationState == 1) {
-                    removeCallbacks(mRetract);
-                    postDelayed(mRetract, 100 - (SystemClock.elapsedRealtime() - mStartTime));
-                    removeCallbacks(mDiamondAnimation);
-                    cancelLongPress();
-                    return false;
-                } else if (mIsPressed) {
-                    mRetract.run();
-                }
-                mIsPressed = false;
             }
         }
         return false;
@@ -254,7 +266,6 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
     @Override
     public void setImageDrawable(Drawable drawable) {
         mWhite.setImageDrawable(drawable);
-        mWhiteCutout.setImageDrawable(drawable);
     }
 
     @Override
@@ -283,13 +294,36 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
         super.onAttachedToWindow();
         mOverviewProxyService.addCallback(mOverviewProxyListener);
         mOpaEnabledNeedsUpdate = true;
-        post(this::getOpaEnabled);
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         mOverviewProxyService.removeCallback(mOverviewProxyListener);
+    }
+
+    private class SettingsObserver extends ContentObserver {
+
+        SettingsObserver(Handler handler) {
+            super(handler);
+        }
+
+        void observe() {
+            mContext.getContentResolver().registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.PIXEL_NAV_ANIMATION),
+                    false, this, UserHandle.USER_ALL);
+            update();
+        }
+
+        @Override
+        public void onChange(boolean selfChange, Uri uri) {
+            update();
+        }
+
+        public void update() {
+            mAllowAnimation = Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.PIXEL_NAV_ANIMATION, 1, UserHandle.USER_CURRENT) == 1;
+        }
     }
 
     private void startDiamondAnimation() {
@@ -338,6 +372,7 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
     }
 
     private void startAll(ArraySet<Animator> arraySet) {
+        showAllOpa();
         for (int size = arraySet.size() - 1; size >= 0; size--) {
             arraySet.valueAt(size).start();
         }
@@ -347,31 +382,29 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
     }
 
     private boolean allowAnimations() {
-        return isAttachedToWindow() && mWindowVisible;
+        return mAllowAnimation && isAttachedToWindow() && mWindowVisible;
     }
 
     private ArraySet<Animator> getDiamondAnimatorSet() {
         ArraySet<Animator> arraySet = new ArraySet<>();
-        arraySet.add(getPropertyAnimator(mTop, View.Y, (-OpaUtils.getPxVal(mResources, R.dimen.opa_diamond_translation)) + mTop.getY(), 200, mDiamondInterpolator));
-        Interpolator interpolator = Interpolators.FAST_OUT_SLOW_IN;
-        arraySet.add(getPropertyAnimator(mTop, FrameLayout.SCALE_X, 0.8f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mTop, FrameLayout.SCALE_Y, 0.8f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mBottom, View.Y, mBottom.getY() + OpaUtils.getPxVal(mResources, R.dimen.opa_diamond_translation), 200, mDiamondInterpolator));
-        arraySet.add(getPropertyAnimator(mBottom, FrameLayout.SCALE_X, 0.8f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mBottom, FrameLayout.SCALE_Y, 0.8f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mLeft, View.X, mLeft.getX() + (-OpaUtils.getPxVal(mResources, R.dimen.opa_diamond_translation)), 200, mDiamondInterpolator));
-        arraySet.add(getPropertyAnimator(mLeft, FrameLayout.SCALE_X, 0.8f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mLeft, FrameLayout.SCALE_Y, 0.8f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mRight, View.X, mRight.getX() + OpaUtils.getPxVal(mResources, R.dimen.opa_diamond_translation), 200, mDiamondInterpolator));
-        arraySet.add(getPropertyAnimator(mRight, FrameLayout.SCALE_X, 0.8f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mRight, FrameLayout.SCALE_Y, 0.8f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mWhite, FrameLayout.SCALE_X, 0.625f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mWhite, FrameLayout.SCALE_Y, 0.625f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mWhiteCutout, FrameLayout.SCALE_X, 0.625f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mWhiteCutout, FrameLayout.SCALE_Y, 0.625f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mHalo, FrameLayout.SCALE_X, 0.47619048f, 100, interpolator));
-        arraySet.add(getPropertyAnimator(mHalo, FrameLayout.SCALE_Y, 0.47619048f, 100, interpolator));
-        arraySet.add(getPropertyAnimator(mHalo, View.ALPHA, 0.0f, 100, interpolator));
+        View view = mTop;
+        arraySet.add(getPropertyAnimator(view, View.Y, (-OpaUtils.getPxVal(mResources, R.dimen.opa_diamond_translation)) + view.getY(), 200, mDiamondInterpolator));
+        arraySet.add(getPropertyAnimator(mTop, FrameLayout.SCALE_X, 0.8f, 200, Interpolators.FAST_OUT_SLOW_IN));
+        arraySet.add(getPropertyAnimator(mTop, FrameLayout.SCALE_Y, 0.8f, 200, Interpolators.FAST_OUT_SLOW_IN));
+        View view2 = mBottom;
+        arraySet.add(getPropertyAnimator(view2, View.Y, view2.getY() + OpaUtils.getPxVal(mResources, R.dimen.opa_diamond_translation), 200, mDiamondInterpolator));
+        arraySet.add(getPropertyAnimator(mBottom, FrameLayout.SCALE_X, 0.8f, 200, Interpolators.FAST_OUT_SLOW_IN));
+        arraySet.add(getPropertyAnimator(mBottom, FrameLayout.SCALE_Y, 0.8f, 200, Interpolators.FAST_OUT_SLOW_IN));
+        View view3 = mLeft;
+        arraySet.add(getPropertyAnimator(view3, View.X, view3.getX() + (-OpaUtils.getPxVal(mResources, R.dimen.opa_diamond_translation)), 200, mDiamondInterpolator));
+        arraySet.add(getPropertyAnimator(mLeft, FrameLayout.SCALE_X, 0.8f, 200, Interpolators.FAST_OUT_SLOW_IN));
+        arraySet.add(getPropertyAnimator(mLeft, FrameLayout.SCALE_Y, 0.8f, 200, Interpolators.FAST_OUT_SLOW_IN));
+        View view4 = mRight;
+        arraySet.add(getPropertyAnimator(view4, View.X, view4.getX() + OpaUtils.getPxVal(mResources, R.dimen.opa_diamond_translation), 200, mDiamondInterpolator));
+        arraySet.add(getPropertyAnimator(mRight, FrameLayout.SCALE_X, 0.8f, 200, Interpolators.FAST_OUT_SLOW_IN));
+        arraySet.add(getPropertyAnimator(mRight, FrameLayout.SCALE_Y, 0.8f, 200, Interpolators.FAST_OUT_SLOW_IN));
+        arraySet.add(getPropertyAnimator(mWhite, FrameLayout.SCALE_X, 0.625f, 200, Interpolators.FAST_OUT_SLOW_IN));
+        arraySet.add(getPropertyAnimator(mWhite, FrameLayout.SCALE_Y, 0.625f, 200, Interpolators.FAST_OUT_SLOW_IN));
         getLongestAnim(arraySet).addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationStart(Animator animator) {
@@ -398,31 +431,24 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
 
     private ArraySet<Animator> getRetractAnimatorSet() {
         ArraySet<Animator> arraySet = new ArraySet<>();
-        Interpolator interpolator = OpaUtils.INTERPOLATOR_40_OUT;
-        arraySet.add(getPropertyAnimator(mRed, FrameLayout.TRANSLATION_X, 0.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mRed, FrameLayout.TRANSLATION_Y, 0.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mRed, FrameLayout.SCALE_X, 1.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mRed, FrameLayout.SCALE_Y, 1.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mBlue, FrameLayout.TRANSLATION_X, 0.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mBlue, FrameLayout.TRANSLATION_Y, 0.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mBlue, FrameLayout.SCALE_X, 1.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mBlue, FrameLayout.SCALE_Y, 1.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mGreen, FrameLayout.TRANSLATION_X, 0.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mGreen, FrameLayout.TRANSLATION_Y, 0.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mGreen, FrameLayout.SCALE_X, 1.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mGreen, FrameLayout.SCALE_Y, 1.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mYellow, FrameLayout.TRANSLATION_X, 0.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mYellow, FrameLayout.TRANSLATION_Y, 0.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mYellow, FrameLayout.SCALE_X, 1.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mYellow, FrameLayout.SCALE_Y, 1.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mWhite, FrameLayout.SCALE_X, 1.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mWhite, FrameLayout.SCALE_Y, 1.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mWhiteCutout, FrameLayout.SCALE_X, 1.0f, 190, interpolator));
-        arraySet.add(getPropertyAnimator(mWhiteCutout, FrameLayout.SCALE_Y, 1.0f, 190, interpolator));
-        Interpolator interpolator2 = Interpolators.FAST_OUT_SLOW_IN;
-        arraySet.add(getPropertyAnimator(mHalo, FrameLayout.SCALE_X, 1.0f, 190, interpolator2));
-        arraySet.add(getPropertyAnimator(mHalo, FrameLayout.SCALE_Y, 1.0f, 190, interpolator2));
-        arraySet.add(getPropertyAnimator(mHalo, FrameLayout.ALPHA, 1.0f, 190, interpolator2));
+        arraySet.add(getPropertyAnimator(mRed, FrameLayout.TRANSLATION_X, 0.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mRed, FrameLayout.TRANSLATION_Y, 0.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mRed, FrameLayout.SCALE_X, 1.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mRed, FrameLayout.SCALE_Y, 1.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mBlue, FrameLayout.TRANSLATION_X, 0.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mBlue, FrameLayout.TRANSLATION_Y, 0.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mBlue, FrameLayout.SCALE_X, 1.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mBlue, FrameLayout.SCALE_Y, 1.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mGreen, FrameLayout.TRANSLATION_X, 0.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mGreen, FrameLayout.TRANSLATION_Y, 0.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mGreen, FrameLayout.SCALE_X, 1.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mGreen, FrameLayout.SCALE_Y, 1.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mYellow, FrameLayout.TRANSLATION_X, 0.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mYellow, FrameLayout.TRANSLATION_Y, 0.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mYellow, FrameLayout.SCALE_X, 1.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mYellow, FrameLayout.SCALE_Y, 1.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mWhite, FrameLayout.SCALE_X, 1.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mWhite, FrameLayout.SCALE_Y, 1.0f, 190, OpaUtils.INTERPOLATOR_40_OUT));
         getLongestAnim(arraySet).addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationStart(Animator animator) {
@@ -448,66 +474,49 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
     }
 
     private ArraySet<Animator> getCollapseAnimatorSet() {
-        Animator propertyAnimator;
-        Animator propertyAnimator2;
-        Animator propertyAnimator3;
-        Animator propertyAnimator4;
+        Animator animator;
+        Animator animator2;
+        Animator animator3;
+        Animator animator4;
         ArraySet<Animator> arraySet = new ArraySet<>();
         if (mIsVertical) {
-            propertyAnimator = getPropertyAnimator(mRed, FrameLayout.TRANSLATION_Y, 0.0f, 133, OpaUtils.INTERPOLATOR_40_OUT);
+            animator = getPropertyAnimator(mRed, FrameLayout.TRANSLATION_Y, 0.0f, 133, OpaUtils.INTERPOLATOR_40_OUT);
         } else {
-            propertyAnimator = getPropertyAnimator(mRed, FrameLayout.TRANSLATION_X, 0.0f, 133, OpaUtils.INTERPOLATOR_40_OUT);
+            animator = getPropertyAnimator(mRed, FrameLayout.TRANSLATION_X, 0.0f, 133, OpaUtils.INTERPOLATOR_40_OUT);
         }
+        arraySet.add(animator);
+        arraySet.add(getPropertyAnimator(mRed, FrameLayout.SCALE_X, 1.0f, 200, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mRed, FrameLayout.SCALE_Y, 1.0f, 200, OpaUtils.INTERPOLATOR_40_OUT));
+        if (mIsVertical) {
+            animator2 = getPropertyAnimator(mBlue, FrameLayout.TRANSLATION_Y, 0.0f, 150, OpaUtils.INTERPOLATOR_40_OUT);
+        } else {
+            animator2 = getPropertyAnimator(mBlue, FrameLayout.TRANSLATION_X, 0.0f, 150, OpaUtils.INTERPOLATOR_40_OUT);
+        }
+        arraySet.add(animator2);
+        arraySet.add(getPropertyAnimator(mBlue, FrameLayout.SCALE_X, 1.0f, 200, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mBlue, FrameLayout.SCALE_Y, 1.0f, 200, OpaUtils.INTERPOLATOR_40_OUT));
+        if (mIsVertical) {
+            animator3 = getPropertyAnimator(mYellow, FrameLayout.TRANSLATION_Y, 0.0f, 133, OpaUtils.INTERPOLATOR_40_OUT);
+        } else {
+            animator3 = getPropertyAnimator(mYellow, FrameLayout.TRANSLATION_X, 0.0f, 133, OpaUtils.INTERPOLATOR_40_OUT);
+        }
+        arraySet.add(animator3);
+        arraySet.add(getPropertyAnimator(mYellow, FrameLayout.SCALE_X, 1.0f, 200, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mYellow, FrameLayout.SCALE_Y, 1.0f, 200, OpaUtils.INTERPOLATOR_40_OUT));
+        if (mIsVertical) {
+            animator4 = getPropertyAnimator(mGreen, FrameLayout.TRANSLATION_Y, 0.0f, 150, OpaUtils.INTERPOLATOR_40_OUT);
+        } else {
+            animator4 = getPropertyAnimator(mGreen, FrameLayout.TRANSLATION_X, 0.0f, 150, OpaUtils.INTERPOLATOR_40_OUT);
+        }
+        arraySet.add(animator4);
+        arraySet.add(getPropertyAnimator(mGreen, FrameLayout.SCALE_X, 1.0f, 200, OpaUtils.INTERPOLATOR_40_OUT));
+        arraySet.add(getPropertyAnimator(mGreen, FrameLayout.SCALE_Y, 1.0f, 200, OpaUtils.INTERPOLATOR_40_OUT));
+        Animator propertyAnimator = getPropertyAnimator(mWhite, FrameLayout.SCALE_X, 1.0f, 150, Interpolators.FAST_OUT_SLOW_IN);
+        Animator propertyAnimator2 = getPropertyAnimator(mWhite, FrameLayout.SCALE_Y, 1.0f, 150, Interpolators.FAST_OUT_SLOW_IN);
+        propertyAnimator.setStartDelay(33);
+        propertyAnimator2.setStartDelay(33);
         arraySet.add(propertyAnimator);
-        Interpolator interpolator = OpaUtils.INTERPOLATOR_40_OUT;
-        arraySet.add(getPropertyAnimator(mRed, FrameLayout.SCALE_X, 1.0f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mRed, FrameLayout.SCALE_Y, 1.0f, 200, interpolator));
-        if (mIsVertical) {
-            propertyAnimator2 = getPropertyAnimator(mBlue, FrameLayout.TRANSLATION_Y, 0.0f, 150, interpolator);
-        } else {
-            propertyAnimator2 = getPropertyAnimator(mBlue, FrameLayout.TRANSLATION_X, 0.0f, 150, interpolator);
-        }
         arraySet.add(propertyAnimator2);
-        arraySet.add(getPropertyAnimator(mBlue, FrameLayout.SCALE_X, 1.0f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mBlue, FrameLayout.SCALE_Y, 1.0f, 200, interpolator));
-        if (mIsVertical) {
-            propertyAnimator3 = getPropertyAnimator(mYellow, FrameLayout.TRANSLATION_Y, 0.0f, 133, interpolator);
-        } else {
-            propertyAnimator3 = getPropertyAnimator(mYellow, FrameLayout.TRANSLATION_X, 0.0f, 133, interpolator);
-        }
-        arraySet.add(propertyAnimator3);
-        arraySet.add(getPropertyAnimator(mYellow, FrameLayout.SCALE_X, 1.0f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mYellow, FrameLayout.SCALE_Y, 1.0f, 200, interpolator));
-        if (mIsVertical) {
-            propertyAnimator4 = getPropertyAnimator(mGreen, FrameLayout.TRANSLATION_Y, 0.0f, 150, interpolator);
-        } else {
-            propertyAnimator4 = getPropertyAnimator(mGreen, FrameLayout.TRANSLATION_X, 0.0f, 150, interpolator);
-        }
-        arraySet.add(propertyAnimator4);
-        arraySet.add(getPropertyAnimator(mGreen, FrameLayout.SCALE_X, 1.0f, 200, interpolator));
-        arraySet.add(getPropertyAnimator(mGreen, FrameLayout.SCALE_Y, 1.0f, 200, interpolator));
-        Interpolator interpolator2 = Interpolators.FAST_OUT_SLOW_IN;
-        Animator propertyAnimator5 = getPropertyAnimator(mWhite, FrameLayout.SCALE_X, 1.0f, 150, interpolator2);
-        Animator propertyAnimator6 = getPropertyAnimator(mWhite, FrameLayout.SCALE_Y, 1.0f, 150, interpolator2);
-        Animator propertyAnimator7 = getPropertyAnimator(mWhiteCutout, FrameLayout.SCALE_X, 1.0f, 150, interpolator2);
-        Animator propertyAnimator8 = getPropertyAnimator(mWhiteCutout, FrameLayout.SCALE_Y, 1.0f, 150, interpolator2);
-        Animator propertyAnimator9 = getPropertyAnimator(mHalo, FrameLayout.SCALE_X, 1.0f, 150, interpolator2);
-        Animator propertyAnimator10 = getPropertyAnimator(mHalo, FrameLayout.SCALE_Y, 1.0f, 150, interpolator2);
-        Animator propertyAnimator11 = getPropertyAnimator(mHalo, FrameLayout.ALPHA, 1.0f, 150, interpolator2);
-        propertyAnimator5.setStartDelay(33L);
-        propertyAnimator6.setStartDelay(33L);
-        propertyAnimator7.setStartDelay(33L);
-        propertyAnimator8.setStartDelay(33L);
-        propertyAnimator9.setStartDelay(33L);
-        propertyAnimator10.setStartDelay(33L);
-        propertyAnimator11.setStartDelay(33L);
-        arraySet.add(propertyAnimator5);
-        arraySet.add(propertyAnimator6);
-        arraySet.add(propertyAnimator7);
-        arraySet.add(propertyAnimator8);
-        arraySet.add(propertyAnimator9);
-        arraySet.add(propertyAnimator10);
-        arraySet.add(propertyAnimator11);
         getLongestAnim(arraySet).addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationStart(Animator animator) {
@@ -535,28 +544,34 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
     private ArraySet<Animator> getLineAnimatorSet() {
         ArraySet<Animator> arraySet = new ArraySet<>();
         if (mIsVertical) {
-            Interpolator interpolator = Interpolators.FAST_OUT_SLOW_IN;
-            arraySet.add(getPropertyAnimator(mRed, View.Y, mRed.getY() + OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry), 225, interpolator));
-            arraySet.add(getPropertyAnimator(mRed, View.X, mRed.getX() + OpaUtils.getPxVal(mResources, R.dimen.opa_line_y_translation), 133, interpolator));
-            arraySet.add(getPropertyAnimator(mBlue, View.Y, mBlue.getY() + OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg), 225, interpolator));
-            arraySet.add(getPropertyAnimator(mYellow, View.Y, mYellow.getY() + (-OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry)), 225, interpolator));
-            arraySet.add(getPropertyAnimator(mYellow, View.X, mYellow.getX() + (-OpaUtils.getPxVal(mResources, R.dimen.opa_line_y_translation)), 133, interpolator));
-            arraySet.add(getPropertyAnimator(mGreen, View.Y, mGreen.getY() + (-OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg)), 225, interpolator));
+            View view = mRed;
+            arraySet.add(getPropertyAnimator(view, View.Y, view.getY() + OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry), 225, Interpolators.FAST_OUT_SLOW_IN));
+            View view2 = mRed;
+            arraySet.add(getPropertyAnimator(view2, View.X, view2.getX() + OpaUtils.getPxVal(mResources, R.dimen.opa_line_y_translation), 133, Interpolators.FAST_OUT_SLOW_IN));
+            View view3 = mBlue;
+            arraySet.add(getPropertyAnimator(view3, View.Y, view3.getY() + OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg), 225, Interpolators.FAST_OUT_SLOW_IN));
+            View view4 = mYellow;
+            arraySet.add(getPropertyAnimator(view4, View.Y, view4.getY() + (-OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry)), 225, Interpolators.FAST_OUT_SLOW_IN));
+            View view5 = mYellow;
+            arraySet.add(getPropertyAnimator(view5, View.X, view5.getX() + (-OpaUtils.getPxVal(mResources, R.dimen.opa_line_y_translation)), 133, Interpolators.FAST_OUT_SLOW_IN));
+            View view6 = mGreen;
+            arraySet.add(getPropertyAnimator(view6, View.Y, view6.getY() + (-OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg)), 225, Interpolators.FAST_OUT_SLOW_IN));
         } else {
-            Interpolator interpolator = Interpolators.FAST_OUT_SLOW_IN;
-            arraySet.add(getPropertyAnimator(mRed, View.X, mRed.getX() + (-OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry)), 225, interpolator));
-            arraySet.add(getPropertyAnimator(mRed, View.Y, mRed.getY() + OpaUtils.getPxVal(mResources, R.dimen.opa_line_y_translation), 133, interpolator));
-            arraySet.add(getPropertyAnimator(mBlue, View.X, mBlue.getX() + (-OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg)), 225, interpolator));
-            arraySet.add(getPropertyAnimator(mYellow, View.X, mYellow.getX() + OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry), 225, interpolator));
-            arraySet.add(getPropertyAnimator(mYellow, View.Y, mYellow.getY() + (-OpaUtils.getPxVal(mResources, R.dimen.opa_line_y_translation)), 133, interpolator));
-            arraySet.add(getPropertyAnimator(mGreen, View.X, mGreen.getX() + OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg), 225, interpolator));
+            View view7 = mRed;
+            arraySet.add(getPropertyAnimator(view7, View.X, view7.getX() + (-OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry)), 225, Interpolators.FAST_OUT_SLOW_IN));
+            View view8 = mRed;
+            arraySet.add(getPropertyAnimator(view8, View.Y, view8.getY() + OpaUtils.getPxVal(mResources, R.dimen.opa_line_y_translation), 133, Interpolators.FAST_OUT_SLOW_IN));
+            View view9 = mBlue;
+            arraySet.add(getPropertyAnimator(view9, View.X, view9.getX() + (-OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg)), 225, Interpolators.FAST_OUT_SLOW_IN));
+            View view10 = mYellow;
+            arraySet.add(getPropertyAnimator(view10, View.X, view10.getX() + OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry), 225, Interpolators.FAST_OUT_SLOW_IN));
+            View view11 = mYellow;
+            arraySet.add(getPropertyAnimator(view11, View.Y, view11.getY() + (-OpaUtils.getPxVal(mResources, R.dimen.opa_line_y_translation)), 133, Interpolators.FAST_OUT_SLOW_IN));
+            View view12 = mGreen;
+            arraySet.add(getPropertyAnimator(view12, View.X, view12.getX() + OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg), 225, Interpolators.FAST_OUT_SLOW_IN));
         }
         arraySet.add(getPropertyAnimator(mWhite, FrameLayout.SCALE_X, 0.0f, 83, HOME_DISAPPEAR_INTERPOLATOR));
         arraySet.add(getPropertyAnimator(mWhite, FrameLayout.SCALE_Y, 0.0f, 83, HOME_DISAPPEAR_INTERPOLATOR));
-        arraySet.add(getPropertyAnimator(mWhiteCutout, FrameLayout.SCALE_X, 0.0f, 83, HOME_DISAPPEAR_INTERPOLATOR));
-        arraySet.add(getPropertyAnimator(mWhiteCutout, FrameLayout.SCALE_Y, 0.0f, 83, HOME_DISAPPEAR_INTERPOLATOR));
-        arraySet.add(getPropertyAnimator(mHalo, FrameLayout.SCALE_X, 0.0f, 83, HOME_DISAPPEAR_INTERPOLATOR));
-        arraySet.add(getPropertyAnimator(mHalo, FrameLayout.SCALE_Y, 0.0f, 83, HOME_DISAPPEAR_INTERPOLATOR));
         getLongestAnim(arraySet).addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationStart(Animator animator) {
@@ -601,9 +616,8 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
     public void updateOpaLayout() {
         boolean shouldShowSwipeUpUI = mOverviewProxyService.shouldShowSwipeUpUI();
         boolean z = true;
-        boolean z2 = mOpaEnabled && !shouldShowSwipeUpUI;
-        mHalo.setVisibility(z2 ? 0 : 4);
-        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) mHalo.getLayoutParams();
+        boolean z2 = !shouldShowSwipeUpUI;
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) mWhite.getLayoutParams();
         if (z2 || shouldShowSwipeUpUI) {
             z = false;
         }
@@ -611,10 +625,8 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
         layoutParams.width = i;
         layoutParams.height = i;
         mWhite.setLayoutParams(layoutParams);
-        mWhiteCutout.setLayoutParams(layoutParams);
         ImageView.ScaleType scaleType = z ? ImageView.ScaleType.FIT_CENTER : ImageView.ScaleType.CENTER;
         mWhite.setScaleType(scaleType);
-        mWhiteCutout.setScaleType(scaleType);
     }
 
     private void cancelCurrentAnimation(String str) {
@@ -678,9 +690,7 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
             view.setTranslationX(0.0f);
             view.setAlpha(0.0f);
         }
-        mHalo.setAlpha(1.0f);
         mWhite.setAlpha(1.0f);
-        mWhiteCutout.setAlpha(1.0f);
         mAnimationState = 0;
         mGestureState = 0;
     }
@@ -712,9 +722,7 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
         if (mWhite.getDrawable() instanceof KeyButtonDrawable) {
             ((KeyButtonDrawable) mWhite.getDrawable()).setDarkIntensity(f);
         }
-        ((KeyButtonDrawable) mHalo.getDrawable()).setDarkIntensity(f);
         mWhite.invalidate();
-        mHalo.invalidate();
         mHome.setDarkIntensity(f);
     }
 
@@ -772,51 +780,83 @@ public class OpaLayout extends FrameLayout implements ButtonInterface, FeedbackE
     }
 
     private AnimatorSet getGestureAnimatorSet() {
-        if (mGestureLineSet != null) {
-            mGestureLineSet.removeAllListeners();
+        AnimatorSet animatorSet = mGestureLineSet;
+        if (animatorSet != null) {
+            animatorSet.removeAllListeners();
             mGestureLineSet.cancel();
             return mGestureLineSet;
         }
         mGestureLineSet = new AnimatorSet();
-        Interpolator interpolator = OpaUtils.INTERPOLATOR_40_OUT;
-        ObjectAnimator scaleObjectAnimator = OpaUtils.getScaleObjectAnimator(mWhite, 0.0f, 100, interpolator);
-        ObjectAnimator scaleObjectAnimator2 = OpaUtils.getScaleObjectAnimator(mWhiteCutout, 0.0f, 100, interpolator);
-        ObjectAnimator scaleObjectAnimator3 = OpaUtils.getScaleObjectAnimator(mHalo, 0.0f, 100, interpolator);
-        scaleObjectAnimator.setStartDelay(50L);
-        scaleObjectAnimator2.setStartDelay(50L);
-        mGestureLineSet.play(scaleObjectAnimator).with(scaleObjectAnimator2).with(scaleObjectAnimator3);
-        Interpolator interpolator2 = Interpolators.FAST_OUT_SLOW_IN;
-        AnimatorSet.Builder with = mGestureLineSet.play(OpaUtils.getScaleObjectAnimator(mTop, 0.8f, 200, interpolator2)).with(scaleObjectAnimator);
-        Interpolator interpolator3 = Interpolators.LINEAR;
-        with.with(OpaUtils.getAlphaObjectAnimator(mRed, 1.0f, 50, 130, interpolator3)).with(OpaUtils.getAlphaObjectAnimator(mYellow, 1.0f, 50, 130, interpolator3)).with(OpaUtils.getAlphaObjectAnimator(mBlue, 1.0f, 50, 113, interpolator3)).with(OpaUtils.getAlphaObjectAnimator(mGreen, 1.0f, 50, 113, interpolator3)).with(OpaUtils.getScaleObjectAnimator(mBottom, 0.8f, 200, interpolator2)).with(OpaUtils.getScaleObjectAnimator(mLeft, 0.8f, 200, interpolator2)).with(OpaUtils.getScaleObjectAnimator(mRight, 0.8f, 200, interpolator2));
+        ObjectAnimator scaleObjectAnimator = OpaUtils.getScaleObjectAnimator(mWhite, 0.0f, 100, OpaUtils.INTERPOLATOR_40_OUT);
+        scaleObjectAnimator.setStartDelay(50);
+        mGestureLineSet.play(scaleObjectAnimator);
+        mGestureLineSet.play(OpaUtils.getScaleObjectAnimator(mTop, 0.8f, 200, Interpolators.FAST_OUT_SLOW_IN)).with(scaleObjectAnimator).with(OpaUtils.getAlphaObjectAnimator(mRed, 1.0f, 50, 130, Interpolators.LINEAR)).with(OpaUtils.getAlphaObjectAnimator(mYellow, 1.0f, 50, 130, Interpolators.LINEAR)).with(OpaUtils.getAlphaObjectAnimator(mBlue, 1.0f, 50, 113, Interpolators.LINEAR)).with(OpaUtils.getAlphaObjectAnimator(mGreen, 1.0f, 50, 113, Interpolators.LINEAR)).with(OpaUtils.getScaleObjectAnimator(mBottom, 0.8f, 200, Interpolators.FAST_OUT_SLOW_IN)).with(OpaUtils.getScaleObjectAnimator(mLeft, 0.8f, 200, Interpolators.FAST_OUT_SLOW_IN)).with(OpaUtils.getScaleObjectAnimator(mRight, 0.8f, 200, Interpolators.FAST_OUT_SLOW_IN));
         if (mIsVertical) {
-            Interpolator interpolator4 = OpaUtils.INTERPOLATOR_40_40;
-            ObjectAnimator translationObjectAnimatorY = OpaUtils.getTranslationObjectAnimatorY(mRed, interpolator4, OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry), mRed.getY() + OpaUtils.getDeltaDiamondPositionLeftY(), 350);
+            ObjectAnimator translationObjectAnimatorY = OpaUtils.getTranslationObjectAnimatorY(mRed, OpaUtils.INTERPOLATOR_40_40, OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry), mRed.getY() + OpaUtils.getDeltaDiamondPositionLeftY(), 350);
             translationObjectAnimatorY.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animator) {
                     startCollapseAnimation();
                 }
             });
-            mGestureLineSet.play(translationObjectAnimatorY).with(scaleObjectAnimator3).with(OpaUtils.getTranslationObjectAnimatorY(mBlue, interpolator4, OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg), mBlue.getY() + OpaUtils.getDeltaDiamondPositionBottomY(mResources), 350)).with(OpaUtils.getTranslationObjectAnimatorY(mYellow, interpolator4, -OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry), mYellow.getY() + OpaUtils.getDeltaDiamondPositionRightY(), 350)).with(OpaUtils.getTranslationObjectAnimatorY(mGreen, interpolator4, -OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg), mGreen.getY() + OpaUtils.getDeltaDiamondPositionTopY(mResources), 350));
+            mGestureLineSet.play(translationObjectAnimatorY).with(OpaUtils.getTranslationObjectAnimatorY(mBlue, OpaUtils.INTERPOLATOR_40_40, OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg), mBlue.getY() + OpaUtils.getDeltaDiamondPositionBottomY(mResources), 350)).with(OpaUtils.getTranslationObjectAnimatorY(mYellow, OpaUtils.INTERPOLATOR_40_40, -OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry), mYellow.getY() + OpaUtils.getDeltaDiamondPositionRightY(), 350)).with(OpaUtils.getTranslationObjectAnimatorY(mGreen, OpaUtils.INTERPOLATOR_40_40, -OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg), mGreen.getY() + OpaUtils.getDeltaDiamondPositionTopY(mResources), 350));
         } else {
-            Interpolator interpolator5 = OpaUtils.INTERPOLATOR_40_40;
-            ObjectAnimator translationObjectAnimatorX = OpaUtils.getTranslationObjectAnimatorX(mRed, interpolator5, -OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry), mRed.getX() + OpaUtils.getDeltaDiamondPositionTopX(), 350);
+            ObjectAnimator translationObjectAnimatorX = OpaUtils.getTranslationObjectAnimatorX(mRed, OpaUtils.INTERPOLATOR_40_40, -OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry), mRed.getX() + OpaUtils.getDeltaDiamondPositionTopX(), 350);
             translationObjectAnimatorX.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animator) {
                     startCollapseAnimation();
                 }
             });
-            mGestureLineSet.play(translationObjectAnimatorX).with(scaleObjectAnimator).with(OpaUtils.getTranslationObjectAnimatorX(mBlue, interpolator5, -OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg), mBlue.getX() + OpaUtils.getDeltaDiamondPositionLeftX(mResources), 350)).with(OpaUtils.getTranslationObjectAnimatorX(mYellow, interpolator5, OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry), mYellow.getX() + OpaUtils.getDeltaDiamondPositionBottomX(), 350)).with(OpaUtils.getTranslationObjectAnimatorX(mGreen, interpolator5, OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg), mGreen.getX() + OpaUtils.getDeltaDiamondPositionRightX(mResources), 350));
+            mGestureLineSet.play(translationObjectAnimatorX).with(scaleObjectAnimator).with(OpaUtils.getTranslationObjectAnimatorX(mBlue, OpaUtils.INTERPOLATOR_40_40, -OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg), mBlue.getX() + OpaUtils.getDeltaDiamondPositionLeftX(mResources), 350)).with(OpaUtils.getTranslationObjectAnimatorX(mYellow, OpaUtils.INTERPOLATOR_40_40, OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_ry), mYellow.getX() + OpaUtils.getDeltaDiamondPositionBottomX(), 350)).with(OpaUtils.getTranslationObjectAnimatorX(mGreen, OpaUtils.INTERPOLATOR_40_40, OpaUtils.getPxVal(mResources, R.dimen.opa_line_x_trans_bg), mGreen.getX() + OpaUtils.getDeltaDiamondPositionRightX(mResources), 350));
         }
         return mGestureLineSet;
     }
 
     private Animator getPropertyAnimator(View view, Property<View, Float> property, float f, int i, Interpolator interpolator) {
         ObjectAnimator ofFloat = ObjectAnimator.ofFloat(view, property, f);
-        ofFloat.setDuration(i);
+        ofFloat.setDuration((long) i);
         ofFloat.setInterpolator(interpolator);
         return ofFloat;
+    }
+
+    private void hideAllOpa() {
+        fadeOutButton(mBlue);
+        fadeOutButton(mRed);
+        fadeOutButton(mYellow);
+        fadeOutButton(mGreen);
+    }
+
+    private void showAllOpa() {
+        fadeInButton(mBlue);
+        fadeInButton(mRed);
+        fadeInButton(mYellow);
+        fadeInButton(mGreen);
+    }
+
+    private void fadeInButton(View viewToFade){
+        if (viewToFade == null) return;
+        ObjectAnimator animator = ObjectAnimator.ofFloat(viewToFade, View.ALPHA, 0.0f, 1.0f);
+        animator.setDuration(OpaLayout.OPA_FADE_IN_DURATION); //ms
+        animator.start();
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                viewToFade.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    private void fadeOutButton(View viewToFade){
+        if (viewToFade == null) return;
+        ObjectAnimator animator = ObjectAnimator.ofFloat(viewToFade, View.ALPHA, 1.0f, 0.0f);
+        animator.setDuration(OpaLayout.OPA_FADE_OUT_DURATION); //ms
+        animator.start();
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                viewToFade.setVisibility(View.INVISIBLE);
+            }
+        });
     }
 }
