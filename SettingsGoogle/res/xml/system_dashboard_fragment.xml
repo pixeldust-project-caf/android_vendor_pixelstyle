@@ -31,17 +31,25 @@
         settings:controller="com.pixeldust.settings.themes.ThemeSettingsPreferenceController"/>
 
     <Preference
+        android:key="status_bar_settings"
+        android:title="@string/status_bar_settings_title"
+        android:summary="@string/status_bar_settings_summary"
+        android:icon="@drawable/ic_settings_statusbar"
+        android:order="-230"
+        android:fragment="com.pixeldust.settings.statusbar.StatusBarSettings"/>
+
+    <Preference
         android:fragment="com.android.settings.datetime.DateTimeSettings"
         android:icon="@drawable/ic_settings_date_time"
         android:key="date_time_settings"
-        android:order="-240"
+        android:order="-220"
         android:title="@string/date_and_time"
         settings:controller="com.android.settings.datetime.DateTimePreferenceController" />
 
     <com.google.android.settings.aware.AwareSettingsDialogPreference
         android:icon="@drawable/ic_aware"
         android:key="aware_settings"
-        android:order="-230"
+        android:order="-210"
         android:title="@string/aware_settings_title"
         settings:controller="com.google.android.settings.aware.AwareSettingsPreferenceController"
         settings:searchable="false" />
