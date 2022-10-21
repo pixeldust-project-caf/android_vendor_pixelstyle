@@ -39,6 +39,14 @@
         android:fragment="com.pixeldust.settings.statusbar.StatusBarSettings"/>
 
     <Preference
+        android:key="quicksettings_settings"
+        android:title="@string/quicksettings_settings_title"
+        android:summary="@string/quicksettings_settings_summary"
+        android:icon="@drawable/ic_settings_quicksettings"
+        android:order="-225"
+        android:fragment="com.pixeldust.settings.quicksettings.QuicksettingsSettings"/>
+
+    <Preference
         android:fragment="com.android.settings.datetime.DateTimeSettings"
         android:icon="@drawable/ic_settings_date_time"
         android:key="date_time_settings"
