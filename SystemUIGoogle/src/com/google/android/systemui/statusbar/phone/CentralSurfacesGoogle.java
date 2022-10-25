@@ -118,6 +118,7 @@ import com.android.systemui.statusbar.policy.UserInfoControllerImpl;
 import com.android.systemui.statusbar.policy.UserSwitcherController;
 import com.android.systemui.statusbar.window.StatusBarWindowController;
 import com.android.systemui.statusbar.window.StatusBarWindowStateController;
+import com.android.systemui.tuner.TunerService;
 import com.android.systemui.util.WallpaperController;
 import com.android.systemui.util.concurrency.DelayableExecutor;
 import com.android.systemui.util.concurrency.MessageRouter;
@@ -125,6 +126,7 @@ import com.android.systemui.volume.VolumeComponent;
 import com.android.systemui.wmshell.BubblesManager;
 import com.android.wm.shell.bubbles.Bubbles;
 import com.android.wm.shell.startingsurface.StartingSurface;
+
 import com.google.android.systemui.dreamliner.DockIndicationController;
 import com.google.android.systemui.dreamliner.DockObserver;
 import com.google.android.systemui.reversecharging.ReverseChargingViewController;
@@ -246,6 +248,7 @@ public class CentralSurfacesGoogle extends CentralSurfacesImpl {
             InteractionJankMonitor jankMonitor,
             DeviceStateManager deviceStateManager,
             DreamOverlayStateController dreamOverlayStateController,
+            TunerService tunerService,
             WiredChargingRippleController wiredChargingRippleController,
             IDreamManager dreamManager,
             WallpaperNotifier wallpaperNotifier,
@@ -257,31 +260,29 @@ public class CentralSurfacesGoogle extends CentralSurfacesImpl {
                 keyguardUpdateMonitor, statusBarSignalPolicy, pulseExpansionHandler,
                 notificationWakeUpCoordinator, keyguardBypassController, keyguardStateController,
                 headsUpManagerPhone, dynamicPrivacyController, falsingManager, falsingCollector,
-                broadcastDispatcher, notificationEntryManager,
-                notificationGutsManager, notificationLogger, notificationInterruptStateProvider,
-                notificationViewHierarchyManager, panelExpansionStateManager, keyguardViewMediator,
-                displayMetrics, metricsLogger, uiBgExecutor, notificationMediaManager,
-                lockScreenUserManager, remoteInputManager, userSwitcherController,
-                batteryController, colorExtractor, screenLifecycle,
-                wakefulnessLifecycle, statusBarStateController,
-                bubblesOptional, visualStabilityManager, deviceProvisionedController,
-                navigationBarController, accessibilityFloatingMenuController, assistManagerLazy,
-                flashlightController, configurationController, notificationShadeWindowController,
-                dozeParameters, scrimController, lockscreenWallpaperLazy,
-                biometricUnlockControllerLazy, dozeServiceHost, powerManager, screenPinningRequest,
-                dozeScrimController, volumeComponent, commandQueue, centralSurfacesComponentFactory,
-                pluginManager, shadeController, statusBarKeyguardViewManager, viewMediatorCallback,
-                initController, timeTickHandler, pluginDependencyProvider, keyguardDismissUtil,
-                extensionController, userInfoControllerImpl, phoneStatusBarPolicy,
-                keyguardIndicationController, demoModeController,
+                broadcastDispatcher, notificationEntryManager, notificationGutsManager,
+                notificationLogger, notificationInterruptStateProvider, notificationViewHierarchyManager,
+                panelExpansionStateManager, keyguardViewMediator, displayMetrics, metricsLogger,
+                uiBgExecutor, notificationMediaManager, lockScreenUserManager, remoteInputManager,
+                userSwitcherController, batteryController, colorExtractor, screenLifecycle,
+                wakefulnessLifecycle, statusBarStateController, bubblesOptional,
+                visualStabilityManager, deviceProvisionedController, navigationBarController,
+                accessibilityFloatingMenuController, assistManagerLazy, flashlightController,
+                configurationController, notificationShadeWindowController, dozeParameters,
+                scrimController, lockscreenWallpaperLazy, biometricUnlockControllerLazy, dozeServiceHost,
+                powerManager, screenPinningRequest, dozeScrimController, volumeComponent,
+                commandQueue, centralSurfacesComponentFactory, pluginManager, shadeController,
+                statusBarKeyguardViewManager, viewMediatorCallback, initController, timeTickHandler,
+                pluginDependencyProvider, keyguardDismissUtil, extensionController, userInfoControllerImpl,
+                phoneStatusBarPolicy, keyguardIndicationController, demoModeController,
                 notificationShadeDepthControllerLazy, statusBarTouchableRegionManager,
-                notificationIconAreaController, brightnessSliderFactory,
-                screenOffAnimationController, wallpaperController, ongoingCallController,
-                statusBarHideIconsForBouncerManager, lockscreenShadeTransitionController,
-                featureFlags, keyguardUnlockAnimationController, delayableExecutor,
-                messageRouter, wallpaperManager, startingSurfaceOptional, activityLaunchAnimator,
-                notifPipelineFlags, jankMonitor, deviceStateManager, dreamOverlayStateController,
-                wiredChargingRippleController, dreamManager, burnInProtectionController);
+                notificationIconAreaController, brightnessSliderFactory, screenOffAnimationController,
+                wallpaperController, ongoingCallController, statusBarHideIconsForBouncerManager,
+                lockscreenShadeTransitionController, featureFlags, keyguardUnlockAnimationController,
+                delayableExecutor, messageRouter, wallpaperManager, startingSurfaceOptional,
+                activityLaunchAnimator, notifPipelineFlags, jankMonitor, deviceStateManager,
+                dreamOverlayStateController, tunerService, wiredChargingRippleController,
+                dreamManager, burnInProtectionController);
         mBatteryStateChangeCallback = new BatteryController.BatteryStateChangeCallback() {
             @Override
             public void onBatteryLevelChanged(int i, boolean z, boolean z2) {
