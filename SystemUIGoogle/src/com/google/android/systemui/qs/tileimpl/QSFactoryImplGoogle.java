@@ -55,9 +55,6 @@ import com.android.systemui.util.leak.GarbageMonitor;
 import com.google.android.systemui.qs.tiles.BatterySaverTileGoogle;
 import com.google.android.systemui.qs.tiles.ReverseChargingTile;
 
-// Custom
-import com.android.systemui.qs.tiles.PowerShareTile;
-
 // Pixeldust qs tiles
 import com.pixeldust.android.systemui.qs.tiles.AODTile;
 import com.pixeldust.android.systemui.qs.tiles.CaffeineTile;
@@ -129,8 +126,7 @@ public class QSFactoryImplGoogle extends QSFactoryImpl {
             Provider<SyncTile> syncTileProvider,
             Provider<VpnTile> vpnTileProvider,
             Provider<DreamTile> dreamTileProvider,
-            Provider<ReverseChargingTile> reverseChargingTileProvider,
-            Provider<PowerShareTile> powerShareTileProvider) {
+            Provider<ReverseChargingTile> reverseChargingTileProvider) {
         super(qsHostLazy,
                 customTileBuilderProvider,
                 wifiTileProvider,
@@ -162,8 +158,7 @@ public class QSFactoryImplGoogle extends QSFactoryImpl {
                 qrCodeScannerTileProvider,
                 oneHandedModeTileProvider,
                 colorCorrectionTileProvider,
-                dreamTileProvider,
-                powerShareTileProvider);
+                dreamTileProvider);
 
         // Pixeldust qs tiles
         mAODTileProvider = aodTileProvider;
