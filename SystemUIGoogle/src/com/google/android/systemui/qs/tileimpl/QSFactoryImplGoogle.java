@@ -16,12 +16,17 @@
 
 package com.google.android.systemui.qs.tileimpl;
 
+import android.content.Context;
+
 import com.android.systemui.dagger.SysUISingleton;
+import com.android.systemui.plugins.qs.QSIconView;
 import com.android.systemui.plugins.qs.QSTile;
+import com.android.systemui.plugins.qs.QSTileView;
 import com.android.systemui.qs.QSHost;
 import com.android.systemui.qs.external.CustomTile;
 import com.android.systemui.qs.tileimpl.QSFactoryImpl;
 import com.android.systemui.qs.tileimpl.QSTileImpl;
+import com.android.systemui.qs.tileimpl.QSTileViewImpl;
 import com.android.systemui.qs.tiles.AirplaneModeTile;
 import com.android.systemui.qs.tiles.AlarmTile;
 import com.android.systemui.qs.tiles.BluetoothTile;
@@ -34,7 +39,6 @@ import com.android.systemui.qs.tiles.DataSaverTile;
 import com.android.systemui.qs.tiles.DeviceControlsTile;
 import com.android.systemui.qs.tiles.DndTile;
 import com.android.systemui.qs.tiles.DreamTile;
-import com.android.systemui.qs.tiles.FlashlightTile;
 import com.android.systemui.qs.tiles.HotspotTile;
 import com.android.systemui.qs.tiles.InternetTile;
 import com.android.systemui.qs.tiles.LocationTile;
@@ -56,9 +60,12 @@ import com.google.android.systemui.qs.tiles.BatterySaverTileGoogle;
 import com.google.android.systemui.qs.tiles.ReverseChargingTile;
 
 // Pixeldust qs tiles
+import com.pixeldust.android.systemui.qs.tileimpl.SliderQSTileViewImpl;
+import com.pixeldust.android.systemui.qs.tileimpl.TouchableQSTile;
 import com.pixeldust.android.systemui.qs.tiles.AODTile;
 import com.pixeldust.android.systemui.qs.tiles.CaffeineTile;
 import com.pixeldust.android.systemui.qs.tiles.DataSwitchTile;
+import com.pixeldust.android.systemui.qs.tiles.FlashlightStrengthTile;
 import com.pixeldust.android.systemui.qs.tiles.LocaleTile;
 //import com.pixeldust.android.systemui.qs.tiles.PDSettingsTile;
 import com.pixeldust.android.systemui.qs.tiles.ScreenshotTile;
@@ -67,11 +74,15 @@ import com.pixeldust.android.systemui.qs.tiles.VpnTile;
 
 import dagger.Lazy;
 
+import java.util.Arrays;
+
 import javax.inject.Inject;
 import javax.inject.Provider;
 
 @SysUISingleton
 public class QSFactoryImplGoogle extends QSFactoryImpl {
+
+    private static final String[] SLIDER_TILES = { "flashlight" };
     private final Provider<BatterySaverTileGoogle> mBatterySaverTileGoogleProvider;
     private final Provider<ReverseChargingTile> mReverseChargingTileProvider;
 
@@ -97,7 +108,7 @@ public class QSFactoryImplGoogle extends QSFactoryImpl {
             Provider<AirplaneModeTile> airplaneModeTileProvider,
             Provider<WorkModeTile> workModeTileProvider,
             Provider<RotationLockTile> rotationLockTileProvider,
-            Provider<FlashlightTile> flashlightTileProvider,
+            Provider<FlashlightStrengthTile> flashlightTileProvider,
             Provider<LocationTile> locationTileProvider,
             Provider<CastTile> castTileProvider,
             Provider<HotspotTile> hotspotTileProvider,
@@ -138,7 +149,7 @@ public class QSFactoryImplGoogle extends QSFactoryImpl {
                 airplaneModeTileProvider,
                 workModeTileProvider,
                 rotationLockTileProvider,
-                flashlightTileProvider,
+                flashlightTileProvider::get,
                 locationTileProvider,
                 castTileProvider,
                 hotspotTileProvider,
@@ -201,5 +212,15 @@ public class QSFactoryImplGoogle extends QSFactoryImpl {
             default: // Do nothing
         }
         return super.createTileInternal(str);
+    }
+
+    @Override
+    public QSTileView createTileView(Context context, QSTile tile, boolean collapsedView) {
+        QSIconView icon = tile.createTileView(context);
+        if (Arrays.asList(SLIDER_TILES).contains(tile.getTileSpec())) {
+            TouchableQSTile touchableTile = (TouchableQSTile) tile;
+            return new SliderQSTileViewImpl(context, icon, collapsedView, touchableTile.getTouchListener(), touchableTile.getSettingsSystemKey());
+        }
+        return new QSTileViewImpl(context, icon, collapsedView);
     }
 }
