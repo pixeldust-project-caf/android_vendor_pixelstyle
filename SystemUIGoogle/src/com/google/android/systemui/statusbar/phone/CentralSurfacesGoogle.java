@@ -233,12 +233,13 @@ public class CentralSurfacesGoogle extends CentralSurfacesImpl {
             ActivityLaunchAnimator activityLaunchAnimator,
             InteractionJankMonitor jankMonitor,
             DeviceStateManager deviceStateManager,
+            TunerService tunerService, 
             WiredChargingRippleController wiredChargingRippleController,
             IDreamManager dreamManager,
             WallpaperNotifier wallpaperNotifier,
             Optional<ReverseChargingViewController> reverseChargingViewControllerOptional,
             KeyguardIndicationControllerGoogle keyguardIndicationControllerGoogle,
-            TunerService tunerService, BurnInProtectionController burnInProtectionController) {
+            BurnInProtectionController burnInProtectionController) {
         super(context, notificationsController, fragmentService, lightBarController,
                 autoHideController, statusBarWindowController, statusBarWindowStateController,
                 keyguardUpdateMonitor, statusBarSignalPolicy, pulseExpansionHandler,
@@ -266,8 +267,8 @@ public class CentralSurfacesGoogle extends CentralSurfacesImpl {
                 statusBarHideIconsForBouncerManager, lockscreenShadeTransitionController,
                 featureFlags, keyguardUnlockAnimationController, delayableExecutor,
                 messageRouter, wallpaperManager, startingSurfaceOptional, activityLaunchAnimator,
-                jankMonitor, deviceStateManager, wiredChargingRippleController,
-                dreamManager, tunerService, burnInProtectionController);
+                jankMonitor, deviceStateManager, tunerService, wiredChargingRippleController,
+                dreamManager, burnInProtectionController);
         mBatteryStateChangeCallback = new BatteryController.BatteryStateChangeCallback() {
             @Override
             public void onBatteryLevelChanged(int i, boolean z, boolean z2) {
