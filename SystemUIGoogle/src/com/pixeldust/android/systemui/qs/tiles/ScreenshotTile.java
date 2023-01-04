@@ -26,6 +26,7 @@ import android.os.UserHandle;
 import android.provider.Settings;
 import android.service.quicksettings.Tile;
 import android.view.View;
+import android.view.WindowManager;
 
 import androidx.annotation.Nullable;
 
@@ -97,7 +98,7 @@ public class ScreenshotTile extends QSTileImpl<BooleanState> {
         try {
              Thread.sleep(1000); //1s
         } catch (InterruptedException ie) {}
-        mScreenshotHelper.takeScreenshot(mRegion ? TAKE_SCREENSHOT_SELECTED_REGION : TAKE_SCREENSHOT_FULLSCREEN, false, false, mHandler, null);
+        mScreenshotHelper.takeScreenshot(mRegion ? TAKE_SCREENSHOT_SELECTED_REGION : TAKE_SCREENSHOT_FULLSCREEN, WindowManager.ScreenshotSource.SCREENSHOT_OTHER, mHandler, null);
     }
 
     @Override
