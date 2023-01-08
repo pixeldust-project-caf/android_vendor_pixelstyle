@@ -110,10 +110,14 @@ public class SliderQSTileViewImpl extends QSTileViewImpl {
 
         @Override
         public void draw(@NonNull Canvas canvas) {
-            Bitmap bitmap = Bitmap.createBitmap(Math.round(shape.getBounds().width() * mCurrentPercent), shape.getBounds().height(), Bitmap.Config.ARGB_8888);
-            Canvas tempCanvas = new Canvas(bitmap);
-            shape.draw(tempCanvas);
-            canvas.drawBitmap(bitmap, 0, 0, new Paint());
+            int width = Math.round(shape.getBounds().width() * mCurrentPercent);
+            int height = shape.getBounds().height();
+            if (width > 0 && height > 0) {
+                Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+                Canvas tempCanvas = new Canvas(bitmap);
+                shape.draw(tempCanvas);
+                canvas.drawBitmap(bitmap, 0, 0, new Paint());
+            }
         }
 
         @Override
