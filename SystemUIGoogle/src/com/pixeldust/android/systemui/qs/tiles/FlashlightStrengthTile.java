@@ -177,6 +177,7 @@ public class FlashlightStrengthTile extends FlashlightTile implements TouchableQ
             mFlashlightController.setFlashlight(newState);
         }
         refreshState(newState);
+        vibrateTick();
     }
 
 

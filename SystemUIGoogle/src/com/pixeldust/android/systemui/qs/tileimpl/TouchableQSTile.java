@@ -24,4 +24,6 @@ public interface TouchableQSTile {
     public View.OnTouchListener getTouchListener();
 
     public String getSettingsSystemKey();
+
+    public void vibrateTick();
 }
