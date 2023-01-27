@@ -30,9 +30,12 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.LayerDrawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.UserHandle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.provider.Settings;
 import android.view.View;
 
@@ -50,6 +53,8 @@ public class SliderQSTileViewImpl extends QSTileViewImpl {
     private String mSettingsKey;
     private SettingObserver mSettingObserver;
 
+    protected Vibrator mVibrator;
+
     public SliderQSTileViewImpl(Context context, QSIconView icon, boolean collapsed, View.OnTouchListener touchListener, String settingKey) {
         super(context, icon, collapsed);
         mSettingsKey = settingKey;
@@ -59,6 +64,7 @@ public class SliderQSTileViewImpl extends QSTileViewImpl {
         mSettingObserver = new SettingObserver(new Handler(Looper.getMainLooper()));
         setOnTouchListener(touchListener);
         mContext.getContentResolver().registerContentObserver(Settings.System.getUriFor(settingKey), false, mSettingObserver, UserHandle.USER_CURRENT);
+        mVibrator = mContext.getSystemService(Vibrator.class);
     }
 
     @Override
@@ -138,6 +144,15 @@ public class SliderQSTileViewImpl extends QSTileViewImpl {
         @Override
         public void setTint(int t) {
             shape.setTint(t);
+        }
+    }
+
+    public void vibrateTick() {
+        if (mVibrator != null) {
+            if (mVibrator.hasVibrator()) {
+                AsyncTask.execute(() ->
+                        mVibrator.vibrate(VibrationEffect.get(VibrationEffect.EFFECT_TICK)));
+            }
         }
     }
 }
