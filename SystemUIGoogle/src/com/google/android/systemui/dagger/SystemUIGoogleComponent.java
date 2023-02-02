@@ -41,7 +41,4 @@ public interface SystemUIGoogleComponent extends SysUIComponent {
     interface Builder extends SysUIComponent.Builder {
         SystemUIGoogleComponent build();
     }
-
-    @SysUISingleton
-    KeyguardSmartspaceController createKeyguardSmartspaceController();
 }
