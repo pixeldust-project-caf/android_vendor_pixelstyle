@@ -25,7 +25,7 @@ import com.google.android.systemui.dagger.SystemUIGoogleBinder;
 
 import dagger.Subcomponent;
 
-import com.google.android.systemui.smartspace.KeyguardSmartspaceController;
+import com.google.android.systemui.smartspace.KeyguardSmartspaceStartable;
 
 @SysUISingleton
 @Subcomponent(modules = {
@@ -43,5 +43,5 @@ public interface SystemUIGoogleComponent extends SysUIComponent {
     }
 
     @SysUISingleton
-    KeyguardSmartspaceController createKeyguardSmartspaceController();
+    KeyguardSmartspaceStartable createKeyguardSmartspaceController();
 }

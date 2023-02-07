@@ -4,6 +4,7 @@ import android.app.AlarmManager;
 import android.content.Context;
 import com.android.internal.logging.UiEventLogger;
 
+import com.android.systemui.KtR;
 import com.android.systemui.R;
 import com.android.systemui.VendorServices;
 import com.android.systemui.statusbar.phone.CentralSurfaces;
@@ -51,7 +52,7 @@ public class GoogleServices extends VendorServices {
         if (new ColumbusContext(mContext).isAvailable()) {
             addService(mColumbusServiceLazy.get());
         }
-        if (mContext.getResources().getBoolean(R.bool.config_touch_context_enabled)) {
+        if (mContext.getResources().getBoolean(KtR.bool.config_touch_context_enabled)) {
             addService(new TouchContextService(mContext));
         }
         AmbientIndicationContainer ambientIndicationContainer = (AmbientIndicationContainer) mCentralSurfaces.getNotificationShadeWindowView().findViewById(R.id.ambient_indication_container);

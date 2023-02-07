@@ -13,6 +13,7 @@
     <uses-permission android:name="android.permission.USE_COLORIZED_NOTIFICATIONS"/>
     <permission android:name="com.android.systemui.permission.SEND_ALERT_BROADCASTS" android:protectionLevel="preinstalled|signature"/>
     <uses-permission android:name="com.google.android.deskclock.permission.RECEIVE_ALERT_BROADCASTS"/>
+    <uses-permission android:name="com.google.android.wildlife.permission.UPDATE_NETWORK_MONITOR"/>
     <permission android:name="com.google.sensor.elmyra.permission.USE_RAW_SENSOR" android:protectionLevel="preinstalled|signature"/>
     <uses-permission android:name="com.google.sensor.elmyra.permission.USE_RAW_SENSOR"/>
     <permission android:name="com.google.android.elmyra.permission.CONFIGURE_ASSIST_GESTURE" android:protectionLevel="preinstalled|signature"/>
@@ -24,7 +25,7 @@
     <uses-permission android:name="com.google.android.apps.nexuslauncher.permission.QSB"/>
     <permission android:name="com.google.android.systemui.permission.WIRELESS_CHARGER_STATUS" android:protectionLevel="privileged|signature"/>
     <protected-broadcast android:name="com.google.android.apps.dreamliner.SETTINGS"/>
-    <protected-broadcast android:name="com.google.android.systemui.smartspace.ENABLE_UPDATE"/>
+    <protected-broadcast android:name="com.google.android.apps.privacy.wildlife.WIFI_STATE_CHANGED"/>
     <uses-permission android:name="com.google.android.apps.dreamliner.permission.DREAMLINER_SERVICE"/>
     <uses-permission android:name="com.android.systemui.permission.PLUGIN"/>
     <uses-permission android:name="android.permission.REGISTER_STATS_PULL_ATOM"/>
@@ -46,7 +47,6 @@
     <permission android:name="com.breel.wallpapers.notifications"/>
     <uses-permission android:name="com.breel.wallpapers.notifications"/>
     <uses-permission android:name="android.permission.VIBRATE_ALWAYS_ON"/>
-    <uses-permission android:name="android.permission.BATTERY_STATS"/>
     <uses-permission android:name="android.permission.MANAGE_GAME_MODE"/>
     <uses-permission android:name="android.permission.ACCESS_FPS_COUNTER"/>
     <uses-permission android:name="android.permission.FORCE_STOP_PACKAGES"/>
@@ -88,8 +88,21 @@
     <!-- Locale tile -->
     <uses-permission android:name="android.permission.CHANGE_CONFIGURATION" />
 
-    <application>
-        <provider android:name=".keyguard.KeyguardSliceProvider" tools:node="remove" />
+    <application
+        android:appComponentFactory="com.google.android.systemui.SystemUIGoogleAppComponentFactory"
+        android:backupAgent="com.google.android.systemui.backup.BackupHelperGoogle"
+        tools:replace="android:appComponentFactory, backupAgent">
+        <provider
+            android:name="com.android.systemui.keyguard.KeyguardSliceProvider"
+            tools:node="remove">
+        </provider>
+        <provider
+            android:name="com.google.android.systemui.keyguard.KeyguardSliceProviderGoogle"
+            android:authorities="com.android.systemui.keyguard"
+            android:enabled="true"
+            android:exported="true"
+            android:grantUriPermissions="true">
+        </provider>
         <service android:exported="true" android:name="com.google.android.systemui.elmyra.ElmyraServiceProxy" android:permission="com.google.android.elmyra.permission.CONFIGURE_ASSIST_GESTURE"/>
         <service android:exported="true" android:name="com.google.android.systemui.columbus.ColumbusServiceProxy" android:permission="com.google.android.columbus.permission.CONFIGURE_COLUMBUS_GESTURE"/>
         <service android:exported="true" android:name="org.pixelexperience.systemui.columbus.ColumbusTargetRequestServiceWrapper">
@@ -97,14 +110,5 @@
                 <action android:name="com.google.android.systemui.QUICK_TAP_TARGET_REQUEST"/>
             </intent-filter>
         </service>
-        <!--service android:exported="true" android:name="com.google.android.systemui.power.batteryhealth.HealthService"/>
-        <receiver android:exported="true" android:name="com.google.android.systemui.power.batteryhealth.HealthUpdateReceiver"/>
-        <service android:enabled="false" android:exported="false" android:name="com.google.android.systemui.lowlightclock.LowLightClockDreamService" android:permission="android.permission.BIND_DREAM_SERVICE">
-            <intent-filter>
-                <action android:name="android.service.dreams.DreamService"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-            </intent-filter>
-        </service>
-        <service android:exported="false" android:name="com.google.android.systemui.communal.dock.setup.notification.DockSetupNotificationTimeoutService" android:permission="android.permission.BIND_JOB_SERVICE"/-->
     </application>
 </manifest>

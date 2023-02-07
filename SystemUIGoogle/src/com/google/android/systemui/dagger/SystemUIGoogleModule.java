@@ -20,7 +20,9 @@ import static com.android.systemui.Dependency.ALLOW_NOTIFICATION_LONG_PRESS_NAME
 import static com.android.systemui.Dependency.LEAK_REPORT_EMAIL_NAME;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.hardware.SensorPrivacyManager;
+import android.net.ConnectivityManager;
 import android.os.Handler;
 import android.os.PowerManager;
 
@@ -30,6 +32,7 @@ import com.android.internal.logging.UiEventLogger;
 import com.android.keyguard.KeyguardViewController;
 import com.android.systemui.assist.AssistManager;
 import com.android.systemui.broadcast.BroadcastDispatcher;
+import com.android.systemui.broadcast.BroadcastSender;
 import com.android.systemui.controls.controller.ControlsTileResourceConfiguration;
 import com.android.systemui.dagger.SysUISingleton;
 import com.android.systemui.dagger.qualifiers.Background;
@@ -41,6 +44,7 @@ import com.android.systemui.doze.DozeHost;
 import com.android.systemui.dump.DumpManager;
 import com.android.systemui.media.dagger.MediaModule;
 import com.android.systemui.navigationbar.gestural.GestureModule;
+import com.android.systemui.plugins.BcSmartspaceDataPlugin;
 import com.android.systemui.plugins.qs.QSFactory;
 import com.android.systemui.plugins.statusbar.StatusBarStateController;
 import com.android.systemui.power.EnhancedEstimates;
@@ -53,6 +57,8 @@ import com.android.systemui.shade.NotificationShadeWindowControllerImpl;
 import com.android.systemui.shade.ShadeController;
 import com.android.systemui.shade.ShadeControllerImpl;
 import com.android.systemui.settings.UserContentResolverProvider;
+import com.android.systemui.settings.UserFileManager;
+import com.android.systemui.settings.UserTracker;
 import com.android.systemui.statusbar.CommandQueue;
 import com.android.systemui.statusbar.NotificationLockscreenUserManager;
 import com.android.systemui.statusbar.NotificationLockscreenUserManagerImpl;
@@ -77,25 +83,32 @@ import com.android.systemui.statusbar.policy.IndividualSensorPrivacyControllerIm
 import com.android.systemui.statusbar.policy.SensorPrivacyController;
 import com.android.systemui.statusbar.policy.SensorPrivacyControllerImpl;
 import com.android.systemui.theme.ThemeOverlayController;
+import com.android.systemui.util.concurrency.DelayableExecutor;
 import com.android.systemui.volume.dagger.VolumeModule;
 
 import com.google.android.systemui.assist.AssistManagerGoogle;
 import com.google.android.systemui.assist.dagger.AssistModule;
 import com.google.android.systemui.columbus.dagger.ColumbusModule;
 import com.google.android.systemui.controls.GoogleControlsTileResourceConfigurationImpl;
-import com.google.android.systemui.elmyra.dagger.ElmyraModule;
 import com.google.android.systemui.dreamliner.DockObserver;
 import com.google.android.systemui.dreamliner.dagger.DreamlinerModule;
+import com.google.android.systemui.elmyra.dagger.ElmyraModule;
+import com.google.android.systemui.elmyra.ServiceConfigurationGoogle;
+import com.google.android.systemui.gesture.GestureModuleGoogle;
 import com.google.android.systemui.power.dagger.PowerModuleGoogle;
+import com.google.android.systemui.power.batteryhealth.HealthManager;
+import com.google.android.systemui.power.batteryhealth.HealthService;
 import com.google.android.systemui.qs.dagger.QSModuleGoogle;
 import com.google.android.systemui.qs.tileimpl.QSFactoryImplGoogle;
 import com.google.android.systemui.reversecharging.ReverseChargingController;
 import com.google.android.systemui.reversecharging.dagger.ReverseChargingModule;
 import com.google.android.systemui.smartspace.dagger.SmartspaceModule;
+import com.google.android.systemui.smartspace.BcSmartspaceDataProvider;
 import com.google.android.systemui.statusbar.dagger.StartCentralSurfacesGoogleModule;
 import com.google.android.systemui.statusbar.KeyguardIndicationControllerGoogle;
 import com.google.android.systemui.statusbar.policy.BatteryControllerImplGoogle;
-import com.google.android.systemui.elmyra.ServiceConfigurationGoogle;
+import com.google.android.systemui.vpn.AdaptivePPNService;
+import com.google.android.systemui.vpn.VpnNetworkMonitor;
 
 import com.pixeldust.android.systemui.theme.ThemeOverlayControllerPixeldust;
 
@@ -108,19 +121,20 @@ import dagger.Provides;
 import dagger.Lazy;
 
 @Module(includes = {
+        AssistModule.class,
+        ColumbusModule.class,
+        DreamlinerModule.class,
+        ElmyraModule.class,
         GestureModule.class,
+        GestureModuleGoogle.class,
         MediaModule.class,
         PowerModuleGoogle.class,
         QSModuleGoogle.class,
         ReferenceScreenshotModule.class,
+        ReverseChargingModule.class,
+        SmartspaceModule.class,
         StartCentralSurfacesGoogleModule.class,
         VolumeModule.class,
-        SmartspaceModule.class,
-        DreamlinerModule.class,
-        ReverseChargingModule.class,
-        AssistModule.class,
-        ElmyraModule.class,
-        ColumbusModule.class,
 })
 public abstract class SystemUIGoogleModule {
 
@@ -191,6 +205,49 @@ public abstract class SystemUIGoogleModule {
         );
     }
 
+    @Provides
+    @SysUISingleton
+    static BcSmartspaceDataPlugin provideBcSmartspaceDataPlugin() {
+        return new BcSmartspaceDataProvider();
+    }
+
+    @Provides
+    @SysUISingleton
+    static BatteryController provideBatteryController(
+            Context context,
+            EnhancedEstimates enhancedEstimates,
+            PowerManager powerManager,
+            BroadcastDispatcher broadcastDispatcher,
+            DemoModeController demoModeController,
+            DumpManager dumpManager,
+            @Main Handler mainHandler,
+            @Background Handler bgHandler,
+            UserContentResolverProvider userContentResolverProvider,
+            ReverseChargingController reverseChargingController) {
+        BatteryController bC = new BatteryControllerImplGoogle(
+                context,
+                enhancedEstimates,
+                powerManager,
+                broadcastDispatcher,
+                demoModeController,
+                dumpManager,
+                mainHandler,
+                bgHandler,
+                userContentResolverProvider,
+                reverseChargingController);
+        bC.init();
+        return bC;
+    }
+
+    @Provides
+    @SysUISingleton
+    static HealthService provideHealthService(
+            Context context,
+            HealthManager healthManager,
+            Resources resources) {
+        return new HealthService(context, healthManager, resources);
+    }
+
     @Binds
     abstract HeadsUpManager bindHeadsUpManagerPhone(HeadsUpManagerPhone headsUpManagerPhone);
 
@@ -225,34 +282,6 @@ public abstract class SystemUIGoogleModule {
 
     @Binds
     abstract DockManager bindDockManager(DockObserver dockObserver);
-
-    @Provides
-    @SysUISingleton
-    static BatteryController provideBatteryController(
-            Context context,
-            EnhancedEstimates enhancedEstimates,
-            PowerManager powerManager,
-            BroadcastDispatcher broadcastDispatcher,
-            DemoModeController demoModeController,
-            DumpManager dumpManager,
-            @Main Handler mainHandler,
-            @Background Handler bgHandler,
-            UserContentResolverProvider userContentResolverProvider,
-            ReverseChargingController reverseChargingController) {
-        BatteryController bC = new BatteryControllerImplGoogle(
-                context,
-                enhancedEstimates,
-                powerManager,
-                broadcastDispatcher,
-                demoModeController,
-                dumpManager,
-                mainHandler,
-                bgHandler,
-                userContentResolverProvider,
-                reverseChargingController);
-        bC.init();
-        return bC;
-    }
 
     /** */
     @Binds

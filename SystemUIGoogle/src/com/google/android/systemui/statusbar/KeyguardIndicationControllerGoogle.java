@@ -52,6 +52,7 @@ import com.android.systemui.statusbar.policy.KeyguardStateController;
 import com.android.systemui.util.DeviceConfigProxy;
 import com.android.systemui.util.concurrency.DelayableExecutor;
 import com.android.systemui.util.wakelock.WakeLock;
+import com.android.systemui.tuner.TunerService;
 
 import com.google.android.systemui.googlebattery.AdaptiveChargingManager;
 
@@ -110,6 +111,8 @@ public class KeyguardIndicationControllerGoogle extends KeyguardIndicationContro
             DevicePolicyManager devicePolicyManager,
             IBatteryStats iBatteryStats,
             UserManager userManager,
+            TunerService tunerService,
+            DeviceConfigProxy deviceConfigProxy,
             @Main DelayableExecutor executor,
             @Background DelayableExecutor bgExecutor,
             FalsingManager falsingManager,
@@ -117,9 +120,8 @@ public class KeyguardIndicationControllerGoogle extends KeyguardIndicationContro
             ScreenLifecycle screenLifecycle,
             KeyguardBypassController keyguardBypassController,
             AccessibilityManager accessibilityManager,
-            FaceHelpMessageDeferral faceHelpMessageDeferral,
-            DeviceConfigProxy deviceConfigProxy) {
-        super(context, mainLooper, wakeLockBuilder, keyguardStateController, statusBarStateController, keyguardUpdateMonitor, dockManager, broadcastDispatcher, devicePolicyManager, iBatteryStats, userManager, executor, bgExecutor, falsingManager, lockPatternUtils, screenLifecycle, keyguardBypassController, accessibilityManager, faceHelpMessageDeferral);
+            FaceHelpMessageDeferral faceHelpMessageDeferral) {
+        super(context, mainLooper, wakeLockBuilder, keyguardStateController, statusBarStateController, keyguardUpdateMonitor, dockManager, broadcastDispatcher, devicePolicyManager, iBatteryStats, userManager, tunerService, deviceConfigProxy, executor, bgExecutor, falsingManager, lockPatternUtils, screenLifecycle, keyguardBypassController, accessibilityManager, faceHelpMessageDeferral);
         mBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public final void onReceive(Context context, Intent intent) {

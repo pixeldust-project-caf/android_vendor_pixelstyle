@@ -3,3 +3,9 @@ java_import  {
     sdk_version: "current",
     jars: ["libs/googlebattery.jar"],
 }
+
+java_import {
+    name: "SystemUIGoogleLib",
+    sdk_version: "current",
+    jars: ["libs/systemui-google.jar"],
+}

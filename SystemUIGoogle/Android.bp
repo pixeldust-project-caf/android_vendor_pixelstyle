@@ -31,6 +31,7 @@ android_library {
         "elmyra-lib",
         "columbus-lib",
         "vendor.google.google_battery-V1-java",
+        "SystemUIGoogleLib",
     ],
     manifest: "AndroidManifest.xml",
 
@@ -70,9 +71,17 @@ android_app {
 
     dxflags: ["--multi-dex"],
     required: [
-        "privapp_whitelist_com.android.systemui",
+        "privapp_whitelist_com.google.android.systemui",
     ],
     overrides: [
         "SystemUI",
     ],
+}
+
+prebuilt_etc {
+    name: "privapp_whitelist_com.google.android.systemui",
+    sub_dir: "permissions",
+    src: "com.google.android.systemui.xml",
+    filename_from_src: true,
+    system_ext_specific: true,
 }
