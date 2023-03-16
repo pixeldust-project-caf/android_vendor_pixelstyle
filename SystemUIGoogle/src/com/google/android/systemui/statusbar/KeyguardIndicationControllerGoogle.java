@@ -123,7 +123,10 @@ public class KeyguardIndicationControllerGoogle extends KeyguardIndicationContro
             FaceHelpMessageDeferral faceHelpMessageDeferral,
             DeviceConfigProxy deviceConfigProxy,
             KeyguardLogger keyguardLogger) {
-        super(context, mainLooper, wakeLockBuilder, keyguardStateController, statusBarStateController, keyguardUpdateMonitor, dockManager, broadcastDispatcher, devicePolicyManager, iBatteryStats, userManager, executor, bgExecutor, falsingManager, authController, lockPatternUtils, screenLifecycle, keyguardBypassController, accessibilityManager, faceHelpMessageDeferral, keyguardLogger);
+        super(context, mainLooper, wakeLockBuilder, keyguardStateController, statusBarStateController, keyguardUpdateMonitor,
+            dockManager, broadcastDispatcher, devicePolicyManager, iBatteryStats, userManager, executor, bgExecutor,
+            falsingManager, authController, lockPatternUtils, screenLifecycle, keyguardBypassController,
+            accessibilityManager, faceHelpMessageDeferral, keyguardLogger);
         mBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public final void onReceive(Context context, Intent intent) {

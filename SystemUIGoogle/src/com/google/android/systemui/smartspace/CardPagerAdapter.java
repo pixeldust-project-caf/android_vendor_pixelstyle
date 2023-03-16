@@ -709,6 +709,10 @@ public class CardPagerAdapter extends PagerAdapter {
         refreshCards();
     }
 
+    public void setUiSurface(String uiSurface) {
+        this.mUiSurface = uiSurface;
+    }
+
     public void setNextAlarm(Drawable drawable, String str) {
         BcNextAlarmData bcNextAlarmData = this.mNextAlarmData;
         bcNextAlarmData.mImage = drawable;

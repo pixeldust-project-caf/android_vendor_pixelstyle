@@ -56,6 +56,6 @@ interface SystemUIGoogleComponent : SysUIComponent {
     /** Member injection into KeyguardSliceProviderGoogle. */
     fun KeyguardSliceProviderGoogle.inject()
 
-    /** Member injection into the supplied argument. */
-    fun inject(customizationProvider: CustomizationProvider)
+    /** Member injection into CustomizationProvider. */
+    fun CustomizationProvider.inject()
 }
