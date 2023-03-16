@@ -16,9 +16,10 @@
 
 package com.google.android.systemui.dreamliner.dagger;
 
+import androidx.annotation.NonNull;
 import android.content.Context;
+import android.os.Handler;
 
-import com.android.systemui.broadcast.BroadcastDispatcher;
 import com.android.systemui.dagger.SysUISingleton;
 import com.android.systemui.dagger.qualifiers.Main;
 import com.android.systemui.plugins.statusbar.StatusBarStateController;
@@ -36,7 +37,10 @@ import dagger.Provides;
 public abstract class DreamlinerModule {
     @Provides
     @SysUISingleton
-    static DockObserver provideDockObserver(Context context, BroadcastDispatcher broadcastDispatcher, StatusBarStateController statusBarStateController, NotificationInterruptStateProvider notificationInterruptStateProvider, ConfigurationController configurationController, @Main DelayableExecutor delayableExecutor, UserTracker userTracker) {
-        return new DockObserver(context, DreamlinerUtils.getInstance(context), broadcastDispatcher, statusBarStateController, notificationInterruptStateProvider, configurationController, delayableExecutor, userTracker);
+    static DockObserver provideDockObserver(Context context, StatusBarStateController statusBarStateController,
+        NotificationInterruptStateProvider notificationInterruptStateProvider, ConfigurationController configurationController,
+        @Main DelayableExecutor delayableExecutor, @NonNull UserTracker userTracker, @Main Handler mainHandler) {
+        return new DockObserver(context, DreamlinerUtils.getInstance(context), statusBarStateController,
+            notificationInterruptStateProvider, configurationController, delayableExecutor, userTracker, mainHandler);
     }
 }
