@@ -56,13 +56,16 @@ import com.android.systemui.keyguard.KeyguardUnlockAnimationController;
 import com.android.systemui.keyguard.KeyguardViewMediator;
 import com.android.systemui.keyguard.ScreenLifecycle;
 import com.android.systemui.keyguard.WakefulnessLifecycle;
+import com.android.systemui.keyguard.ui.viewmodel.LightRevealScrimViewModel;
 import com.android.systemui.navigationbar.NavigationBarController;
 import com.android.systemui.plugins.FalsingManager;
 import com.android.systemui.plugins.PluginDependencyProvider;
+import com.android.systemui.plugins.PluginManager;
 import com.android.systemui.recents.ScreenPinningRequest;
 import com.android.systemui.settings.brightness.BrightnessSliderController;
+import com.android.systemui.shade.CameraLauncher;
 import com.android.systemui.shade.ShadeController;
-import com.android.systemui.shared.plugins.PluginManager;
+import com.android.systemui.shade.ShadeExpansionStateManager;
 import com.android.systemui.statusbar.CommandQueue;
 import com.android.systemui.statusbar.KeyguardIndicationController;
 import com.android.systemui.statusbar.LockscreenShadeTransitionController;
@@ -98,7 +101,6 @@ import com.android.systemui.statusbar.phone.StatusBarSignalPolicy;
 import com.android.systemui.statusbar.phone.StatusBarTouchableRegionManager;
 import com.android.systemui.statusbar.phone.dagger.CentralSurfacesComponent;
 import com.android.systemui.statusbar.phone.ongoingcall.OngoingCallController;
-import com.android.systemui.statusbar.phone.panelstate.PanelExpansionStateManager;
 import com.android.systemui.statusbar.policy.BatteryController;
 import com.android.systemui.statusbar.policy.BurnInProtectionController;
 import com.android.systemui.statusbar.policy.ConfigurationController;
@@ -144,6 +146,7 @@ public class CentralSurfacesGoogle extends CentralSurfacesImpl {
     private final SmartSpaceController mSmartSpaceController;
     private final NotificationLockscreenUserManagerGoogle mNotificationLockscreenUserManagerGoogle;
 
+    private Context mContext;
     private long mAnimStartTime;
     private int mReceivingBatteryLevel;
     private boolean mReverseChargingAnimShown;
@@ -173,7 +176,7 @@ public class CentralSurfacesGoogle extends CentralSurfacesImpl {
             NotificationGutsManager notificationGutsManager,
             NotificationLogger notificationLogger,
             NotificationInterruptStateProvider notificationInterruptStateProvider,
-            PanelExpansionStateManager panelExpansionStateManager,
+            ShadeExpansionStateManager shadeExpansionStateManager,
             KeyguardViewMediator keyguardViewMediator,
             DisplayMetrics displayMetrics,
             MetricsLogger metricsLogger,
@@ -240,6 +243,8 @@ public class CentralSurfacesGoogle extends CentralSurfacesImpl {
             TunerService tunerService, 
             WiredChargingRippleController wiredChargingRippleController,
             IDreamManager dreamManager,
+            Lazy<CameraLauncher> cameraLauncherLazy,
+            Lazy<LightRevealScrimViewModel> lightRevealScrimViewModelLazy,
             WallpaperNotifier wallpaperNotifier,
             SmartSpaceController smartSpaceController,
             Optional<ReverseChargingViewController> reverseChargingViewControllerOptional,
@@ -251,7 +256,7 @@ public class CentralSurfacesGoogle extends CentralSurfacesImpl {
                 notificationWakeUpCoordinator, keyguardBypassController, keyguardStateController,
                 headsUpManagerPhone, dynamicPrivacyController, falsingManager, falsingCollector,
                 broadcastDispatcher, notificationGutsManager, notificationLogger, notificationInterruptStateProvider,
-                panelExpansionStateManager, keyguardViewMediator,
+                shadeExpansionStateManager, keyguardViewMediator,
                 displayMetrics, metricsLogger, uiBgExecutor, notificationMediaManager,
                 notificationLockscreenUserManagerGoogle, remoteInputManager, userSwitcherController,
                 batteryController, colorExtractor, screenLifecycle,
@@ -273,7 +278,7 @@ public class CentralSurfacesGoogle extends CentralSurfacesImpl {
                 featureFlags, keyguardUnlockAnimationController, delayableExecutor,
                 messageRouter, wallpaperManager, startingSurfaceOptional, activityLaunchAnimator,
                 jankMonitor, deviceStateManager, tunerService, wiredChargingRippleController,
-                dreamManager, burnInProtectionController);
+                dreamManager, cameraLauncherLazy, lightRevealScrimViewModelLazy, burnInProtectionController);
         mBatteryStateChangeCallback = new BatteryController.BatteryStateChangeCallback() {
             @Override
             public void onBatteryLevelChanged(int i, boolean z, boolean z2) {
@@ -287,6 +292,7 @@ public class CentralSurfacesGoogle extends CentralSurfacesImpl {
                 if (DEBUG) {
                     Log.d("CentralSurfacesGoogle", "onBatteryLevelChanged(): level=" + i + ",wlc=" + (mBatteryController.isWirelessCharging() ? 1 : 0) + ",wlcs=" + mChargingAnimShown + ",rtxs=" + mReverseChargingAnimShown + ",this=" + this);
                 }
+            mContext = context;
             }
 
             @Override
