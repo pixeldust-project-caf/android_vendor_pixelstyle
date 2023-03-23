@@ -38,6 +38,7 @@
     <string name="quick_settings_pixeldust_label">PixelDust Einstellungen</string>
 
     <!-- Screenshot QS tile -->
+    <string name="quick_settings_screenshot_title">Bildschirmfoto</string>
     <string name="quick_settings_screenshot_label">Ganzen Bildschirm aufnehmen</string>
     <string name="quick_settings_region_screenshot_label">Bildauschnitt aufnehmen</string>
 
