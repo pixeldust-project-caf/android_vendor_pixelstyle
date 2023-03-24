@@ -25,6 +25,9 @@
     <string name="adaptive_charging">Adaptive Charging</string>
     <string name="adaptive_charging_description">Extend battery lifespan by charging steadily during longer charging periods. Activated based on your usage cycle.</string>
     <string name="adaptive_charging_time_estimate"><b>Adaptive Charging</b> • Full by %1$s</string>
+    <string name="add_bypassed_application_hint">No apps added</string>
+    <string name="advanced_vpn_preference_group_title">Built-in</string>
+    <string name="all_apps_category_title">All apps</string>
     <string name="ambient_display_wake_screen_footer"><annotation link="link">Preferences</annotation></string>
     <string name="ambient_display_wake_screen_summary"/>
     <string name="ambient_display_wake_screen_summary_on"/>
@@ -562,6 +565,10 @@ To improve performance, you can set up Face Unlock again in Settings."</string>
     <string name="tips_suggestion_title">Get to know your Pixel</string>
     <string name="traffic_light_face_enrolling_title_accessibility">Hold phone in front of your face</string>
     <string name="usb_use_file_transfers">File transfer / Android Auto</string>
+    <string name="vpn_app_bypass">"Don't use VPN for selected apps"</string>
+    <string name="vpn_bypass_category_title">"Don't use VPN for these apps"</string>
+    <string name="vpn_bypass_description">"You can allow some apps to ignore the VPN and use your phone's regular network connection"</string>
+    <string name="vpn_preference_group_title">Others</string>
     <string name="wake_screen_aware_disabled_info_dialog_content"/>
     <string name="wake_screen_aware_off_dialog_content"/>
     <string name="wake_screen_aware_off_dialog_title"/>
