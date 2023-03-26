@@ -5,14 +5,14 @@
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:forceHasOverlappingRendering="false"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:paddingTop="4.0dip">
 
     <LinearLayout
         android:id="@id/ambient_indication_info_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:paddingBottom="10.0dip"
         android:orientation="horizontal">
 
         <ImageView
