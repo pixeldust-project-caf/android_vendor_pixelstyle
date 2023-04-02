@@ -38,8 +38,10 @@ import com.android.systemui.shade.NotificationShadeWindowView;
 import com.android.systemui.statusbar.KeyguardIndicationController;
 import com.android.systemui.statusbar.SysuiStatusBarStateController;
 import com.android.systemui.statusbar.phone.KeyguardIndicationTextView;
-import com.android.systemui.statusbar.phone.CentralSurfaces;
+//import com.android.systemui.statusbar.phone.CentralSurfaces;
 import com.android.systemui.statusbar.policy.ConfigurationController;
+
+import com.google.android.systemui.statusbar.phone.CentralSurfacesGoogle;
 
 import java.util.concurrent.TimeUnit;
 
@@ -62,7 +64,7 @@ public class DockIndicationController implements StatusBarStateController.StateL
     private final Runnable mHidePromoRunnable;
     private final KeyguardIndicationController mKeyguardIndicationController;
     private final Animation mShowPromoAnimation;
-    private final CentralSurfaces mCentralSurfaces;
+    private final CentralSurfacesGoogle mCentralSurfaces;
     @VisibleForTesting
     FrameLayout mDockPromo;
     @VisibleForTesting
@@ -78,7 +80,7 @@ public class DockIndicationController implements StatusBarStateController.StateL
     private boolean mTopIconShowing;
     private KeyguardIndicationTextView mTopIndicationView;
 
-    public DockIndicationController(Context context, KeyguardIndicationController keyguardIndicationController, SysuiStatusBarStateController sysuiStatusBarStateController, CentralSurfaces centralSurfaces) {
+    public DockIndicationController(Context context, KeyguardIndicationController keyguardIndicationController, SysuiStatusBarStateController sysuiStatusBarStateController, CentralSurfacesGoogle centralSurfaces) {
         mContext = context;
         mCentralSurfaces = centralSurfaces;
         mKeyguardIndicationController = keyguardIndicationController;
