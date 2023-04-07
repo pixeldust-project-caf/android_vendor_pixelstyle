@@ -45,6 +45,7 @@ import com.android.systemui.statusbar.policy.FlashlightController;
 
 import com.pixeldust.android.systemui.qs.tileimpl.TouchableQSTile;
 
+import java.lang.NullPointerException;
 import java.util.concurrent.Executor;
 
 import javax.inject.Inject;
@@ -140,6 +141,11 @@ public class FlashlightStrengthTile extends FlashlightTile implements TouchableQ
             mMaxLevel = (int) characteristics.get(FLASHLIGHT_MAX_BRIGHTNESS_CHARACTERISTIC);
             mDefaultLevel = (int) characteristics.get(FLASHLIGHT_DEFAULT_BRIGHTNESS_CHARACTERISTIC);
         } catch (CameraAccessException e) {
+            mCameraId = null;
+            mSupportsSettingFlashLevel = false;
+            mMaxLevel = 1;
+            mDefaultLevel = 0;
+        } catch (NullPointerException e) {
             mCameraId = null;
             mSupportsSettingFlashLevel = false;
             mMaxLevel = 1;
