@@ -21,6 +21,8 @@ import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.os.Handler;
 import android.os.UserManager;
+
+import com.android.internal.widget.LockPatternUtils;
 import com.android.systemui.broadcast.BroadcastDispatcher;
 import com.android.systemui.dagger.SysUISingleton;
 import com.android.systemui.dagger.qualifiers.Main;
@@ -36,9 +38,12 @@ import com.android.systemui.statusbar.phone.KeyguardBypassController;
 import com.android.systemui.statusbar.policy.DeviceProvisionedController;
 import com.android.systemui.statusbar.policy.KeyguardStateController;
 import com.android.systemui.util.settings.SecureSettings;
+
 import com.google.android.systemui.smartspace.SmartSpaceController;
-import dagger.Lazy;
+
 import javax.inject.Inject;
+
+import dagger.Lazy;
 
 @SysUISingleton
 public final class NotificationLockscreenUserManagerGoogle extends NotificationLockscreenUserManagerImpl {
@@ -48,10 +53,10 @@ public final class NotificationLockscreenUserManagerGoogle extends NotificationL
     public final SmartSpaceController mSmartSpaceController;
 
     @Inject
-    public NotificationLockscreenUserManagerGoogle(Context context, BroadcastDispatcher broadcastDispatcher, DevicePolicyManager devicePolicyManager, UserManager userManager, UserTracker userTracker, Lazy<NotificationVisibilityProvider> visibilityProviderLazy, Lazy<CommonNotifCollection> commonNotifCollectionLazy, NotificationClickNotifier clickNotifier, Lazy<OverviewProxyService> overviewProxyServiceLazy, KeyguardManager keyguardManager, StatusBarStateController statusBarStateController, @Main Handler mainHandler, DeviceProvisionedController deviceProvisionedController, KeyguardStateController keyguardStateController, Lazy<KeyguardBypassController> keyguardBypassController, SmartSpaceController smartSpaceController, SecureSettings secureSettings, DumpManager dumpManager) {
+    public NotificationLockscreenUserManagerGoogle(Context context, BroadcastDispatcher broadcastDispatcher, DevicePolicyManager devicePolicyManager, UserManager userManager, UserTracker userTracker, Lazy<NotificationVisibilityProvider> visibilityProviderLazy, Lazy<CommonNotifCollection> commonNotifCollectionLazy, NotificationClickNotifier clickNotifier, Lazy<OverviewProxyService> overviewProxyServiceLazy, KeyguardManager keyguardManager, StatusBarStateController statusBarStateController, @Main Handler mainHandler, DeviceProvisionedController deviceProvisionedController, KeyguardStateController keyguardStateController, Lazy<KeyguardBypassController> keyguardBypassController, SmartSpaceController smartSpaceController, SecureSettings secureSettings, DumpManager dumpManager, LockPatternUtils lockPatternUtils) {
         super(context, broadcastDispatcher, devicePolicyManager, userManager, userTracker, visibilityProviderLazy, commonNotifCollectionLazy, clickNotifier,
         overviewProxyServiceLazy, keyguardManager, statusBarStateController, mainHandler, deviceProvisionedController, keyguardStateController, secureSettings,
-        dumpManager);
+        dumpManager, lockPatternUtils);
         KeyguardStateController.Callback callback = new KeyguardStateController.Callback() {
             public void onKeyguardShowingChanged() {
                 NotificationLockscreenUserManagerGoogle.this.updateSmartSpaceVisibilitySettings();
