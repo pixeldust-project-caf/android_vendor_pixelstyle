@@ -20,207 +20,43 @@ import android.content.Context;
 
 import com.android.systemui.dagger.SysUISingleton;
 import com.android.systemui.plugins.qs.QSIconView;
-import com.android.systemui.plugins.qs.QSTile;
 import com.android.systemui.plugins.qs.QSTileView;
+import com.android.systemui.plugins.qs.QSTile;
 import com.android.systemui.qs.QSHost;
 import com.android.systemui.qs.external.CustomTile;
 import com.android.systemui.qs.tileimpl.QSFactoryImpl;
 import com.android.systemui.qs.tileimpl.QSTileImpl;
 import com.android.systemui.qs.tileimpl.QSTileViewImpl;
-import com.android.systemui.qs.tiles.AirplaneModeTile;
-import com.android.systemui.qs.tiles.AlarmTile;
-import com.android.systemui.qs.tiles.BluetoothTile;
-import com.android.systemui.qs.tiles.CameraToggleTile;
-import com.android.systemui.qs.tiles.CastTile;
-import com.android.systemui.qs.tiles.CellularTile;
-import com.android.systemui.qs.tiles.ColorCorrectionTile;
-import com.android.systemui.qs.tiles.ColorInversionTile;
-import com.android.systemui.qs.tiles.DataSaverTile;
-import com.android.systemui.qs.tiles.DeviceControlsTile;
-import com.android.systemui.qs.tiles.DndTile;
-import com.android.systemui.qs.tiles.DreamTile;
-import com.android.systemui.qs.tiles.HotspotTile;
-import com.android.systemui.qs.tiles.InternetTile;
-import com.android.systemui.qs.tiles.LocationTile;
-import com.android.systemui.qs.tiles.MicrophoneToggleTile;
-import com.android.systemui.qs.tiles.NfcTile;
-import com.android.systemui.qs.tiles.NightDisplayTile;
-import com.android.systemui.qs.tiles.OneHandedModeTile;
-import com.android.systemui.qs.tiles.QRCodeScannerTile;
-import com.android.systemui.qs.tiles.QuickAccessWalletTile;
-import com.android.systemui.qs.tiles.ReduceBrightColorsTile;
-import com.android.systemui.qs.tiles.RotationLockTile;
-import com.android.systemui.qs.tiles.ScreenRecordTile;
-import com.android.systemui.qs.tiles.UiModeNightTile;
-import com.android.systemui.qs.tiles.WifiTile;
-import com.android.systemui.qs.tiles.WorkModeTile;
-import com.android.systemui.util.leak.GarbageMonitor;
-
-import com.google.android.systemui.qs.tiles.BatterySaverTileGoogle;
-import com.google.android.systemui.qs.tiles.ReverseChargingTile;
-
-// Pixeldust qs tiles
-import com.pixeldust.android.systemui.qs.tileimpl.SliderQSTileViewImpl;
-import com.pixeldust.android.systemui.qs.tileimpl.TouchableQSTile;
-import com.pixeldust.android.systemui.qs.tiles.AODTile;
-import com.pixeldust.android.systemui.qs.tiles.CaffeineTile;
-import com.pixeldust.android.systemui.qs.tiles.DataSwitchTile;
-import com.pixeldust.android.systemui.qs.tiles.FlashlightStrengthTile;
-import com.pixeldust.android.systemui.qs.tiles.LocaleTile;
-//import com.pixeldust.android.systemui.qs.tiles.PDSettingsTile;
-import com.pixeldust.android.systemui.qs.tiles.ScreenshotTile;
-import com.pixeldust.android.systemui.qs.tiles.SyncTile;
-import com.pixeldust.android.systemui.qs.tiles.VpnTile;
-
-import dagger.Lazy;
 
 import java.util.Arrays;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import dagger.Lazy;
+
+/**
+ * A factory that creates Quick Settings tiles based on a tileSpec
+ *
+ * To create a new tile within SystemUI, the tile class should extend {@link QSTileImpl} and have
+ * a public static final TILE_SPEC field which serves as a unique key for this tile. (e.g. {@link
+ * com.android.systemui.qs.tiles.DreamTile#TILE_SPEC})
+ *
+ * After, create or find an existing Module class to house the tile's binding method (e.g. {@link
+ * com.android.systemui.accessibility.AccessibilityModule}). If creating a new module, add your
+ * module to the SystemUI dagger graph by including it in an appropriate module.
+ */
+
 @SysUISingleton
 public class QSFactoryImplGoogle extends QSFactoryImpl {
-
-    private static final String[] SLIDER_TILES = { "flashlight" };
-    private final Provider<BatterySaverTileGoogle> mBatterySaverTileGoogleProvider;
-    private final Provider<ReverseChargingTile> mReverseChargingTileProvider;
-
-    private final Provider<CaffeineTile> mCaffeineTileProvider;
-    private final Provider<SyncTile> mSyncTileProvider;
-    private final Provider<VpnTile> mVpnTileProvider;
-    private final Provider<AODTile> mAODTileProvider;
-    private final Provider<DataSwitchTile> mDataSwitchTileProvider;
-    //private final Provider<PDSettingsTile> mPDSettingsTileProvider;
-    private final Provider<LocaleTile> mLocaleTileProvider;
-    private final Provider<ScreenshotTile> mScreenshotTileProvider;
 
     @Inject
     public QSFactoryImplGoogle(
             Lazy<QSHost> qsHostLazy,
             Provider<CustomTile.Builder> customTileBuilderProvider,
-            Provider<WifiTile> wifiTileProvider,
-            Provider<InternetTile> internetTileProvider,
-            Provider<BluetoothTile> bluetoothTileProvider,
-            Provider<CellularTile> cellularTileProvider,
-            Provider<DndTile> dndTileProvider,
-            Provider<ColorInversionTile> colorInversionTileProvider,
-            Provider<AirplaneModeTile> airplaneModeTileProvider,
-            Provider<WorkModeTile> workModeTileProvider,
-            Provider<RotationLockTile> rotationLockTileProvider,
-            Provider<FlashlightStrengthTile> flashlightTileProvider,
-            Provider<LocationTile> locationTileProvider,
-            Provider<CastTile> castTileProvider,
-            Provider<HotspotTile> hotspotTileProvider,
-            Provider<BatterySaverTileGoogle> batterySaverTileGoogleProvider,
-            Provider<DataSaverTile> dataSaverTileProvider,
-            Provider<NightDisplayTile> nightDisplayTileProvider,
-            Provider<NfcTile> nfcTileProvider,
-            Provider<GarbageMonitor.MemoryTile> memoryTileProvider,
-            Provider<UiModeNightTile> uiModeNightTileProvider,
-            Provider<ScreenRecordTile> screenRecordTileProvider,
-            Provider<ReduceBrightColorsTile> reduceBrightColorsTileProvider,
-            Provider<CameraToggleTile> cameraToggleTileProvider,
-            Provider<MicrophoneToggleTile> microphoneToggleTileProvider,
-            Provider<DeviceControlsTile> deviceControlsTileProvider,
-            Provider<AlarmTile> alarmTileProvider,
-            Provider<QuickAccessWalletTile> quickAccessWalletTileProvider,
-            Provider<QRCodeScannerTile> qrCodeScannerTileProvider,
-            Provider<OneHandedModeTile> oneHandedModeTileProvider,
-            Provider<ColorCorrectionTile> colorCorrectionTileProvider,
-            Provider<AODTile> aodTileProvider,
-            Provider<CaffeineTile> caffeineTileProvider,
-            Provider<DataSwitchTile> dataSwitchTileProvider,
-            Provider<LocaleTile> localeTileProvider,
-            //Provider<PDSettingsTile> pdSettingsTileProvider,
-            Provider<ScreenshotTile> screenshotTileProvider,
-            Provider<SyncTile> syncTileProvider,
-            Provider<VpnTile> vpnTileProvider,
-            Provider<DreamTile> dreamTileProvider,
-            Provider<ReverseChargingTile> reverseChargingTileProvider) {
+            Map<String, Provider<QSTileImpl<?>>> tileMap) {
         super(qsHostLazy,
-                customTileBuilderProvider,
-                wifiTileProvider,
-                internetTileProvider,
-                bluetoothTileProvider,
-                cellularTileProvider,
-                dndTileProvider,
-                colorInversionTileProvider,
-                airplaneModeTileProvider,
-                workModeTileProvider,
-                rotationLockTileProvider,
-                flashlightTileProvider::get,
-                locationTileProvider,
-                castTileProvider,
-                hotspotTileProvider,
-                () -> batterySaverTileGoogleProvider.get(),
-                dataSaverTileProvider,
-                nightDisplayTileProvider,
-                nfcTileProvider,
-                memoryTileProvider,
-                uiModeNightTileProvider,
-                screenRecordTileProvider,
-                reduceBrightColorsTileProvider,
-                cameraToggleTileProvider,
-                microphoneToggleTileProvider,
-                deviceControlsTileProvider,
-                alarmTileProvider,
-                quickAccessWalletTileProvider,
-                qrCodeScannerTileProvider,
-                oneHandedModeTileProvider,
-                colorCorrectionTileProvider,
-                dreamTileProvider);
-
-        // Pixeldust qs tiles
-        mAODTileProvider = aodTileProvider;
-        mCaffeineTileProvider = caffeineTileProvider;
-        mDataSwitchTileProvider = dataSwitchTileProvider;
-        mLocaleTileProvider = localeTileProvider;
-        //mPDSettingsTileProvider = pdSettingsTileProvider;
-        mScreenshotTileProvider = screenshotTileProvider;
-        mSyncTileProvider = syncTileProvider;
-        mVpnTileProvider = vpnTileProvider;
-
-        mReverseChargingTileProvider = reverseChargingTileProvider;
-        mBatterySaverTileGoogleProvider = batterySaverTileGoogleProvider;
-    }
-
-    @Override
-    public final QSTileImpl createTileInternal(String str) {
-        switch (str) {
-            case "reverse":
-                return mReverseChargingTileProvider.get();
-            case "battery":
-                return mBatterySaverTileGoogleProvider.get();
-            case "aod":
-                return mAODTileProvider.get();
-            case "caffeine":
-                return mCaffeineTileProvider.get();
-            case "dataswitch":
-                return mDataSwitchTileProvider.get();
-            case "locale":
-                return mLocaleTileProvider.get();
-            /*case "pixeldust_settings":
-                return mPDSettingsTileProvider.get();
-            */
-            case "screenshot":
-                return mScreenshotTileProvider.get();
-            case "sync":
-                return mSyncTileProvider.get();
-            case "vpn":
-                return mVpnTileProvider.get();
-            default: // Do nothing
-        }
-        return super.createTileInternal(str);
-    }
-
-    @Override
-    public QSTileView createTileView(Context context, QSTile tile, boolean collapsedView) {
-        QSIconView icon = tile.createTileView(context);
-        if (Arrays.asList(SLIDER_TILES).contains(tile.getTileSpec())) {
-            TouchableQSTile touchableTile = (TouchableQSTile) tile;
-            return new SliderQSTileViewImpl(context, icon, collapsedView, touchableTile.getTouchListener(), touchableTile.getSettingsSystemKey());
-        }
-        return new QSTileViewImpl(context, icon, collapsedView);
-    }
+                customTileBuilderProvider, tileMap);
+   }
 }
