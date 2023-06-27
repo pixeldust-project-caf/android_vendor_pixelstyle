@@ -47,6 +47,8 @@ import javax.inject.Inject;
 public final class AODTile extends QSTileImpl<BooleanState> implements
         BatteryController.BatteryStateChangeCallback {
 
+    public static final String TILE_SPEC = "aod";
+
     private boolean mAodDisabled;
     private final Icon mIcon = ResourceIcon.get(R.drawable.ic_qs_aod);
 

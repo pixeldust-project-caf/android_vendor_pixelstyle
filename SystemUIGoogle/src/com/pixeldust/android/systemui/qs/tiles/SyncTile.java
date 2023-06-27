@@ -45,6 +45,8 @@ import javax.inject.Inject;
 /** Quick settings tile: Sync **/
 public class SyncTile extends QSTileImpl<BooleanState> {
 
+    public static final String TILE_SPEC = "sync";
+
     private Object mSyncObserverHandle = null;
     private boolean mListening;
 

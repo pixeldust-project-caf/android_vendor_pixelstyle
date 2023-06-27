@@ -49,6 +49,8 @@ import javax.inject.Inject;
 /** Quick settings tile: Screenshot **/
 public class ScreenshotTile extends QSTileImpl<BooleanState> {
 
+    public static final String TILE_SPEC = "screenshot";
+
     private boolean mRegion = false;
     private Handler mHandler;
     private ScreenshotHelper mScreenshotHelper;
