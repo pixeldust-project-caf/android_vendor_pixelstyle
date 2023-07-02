@@ -40,6 +40,7 @@ import com.android.systemui.qs.QSHost;
 import com.android.systemui.qs.logging.QSLogger;
 import com.android.systemui.qs.tiles.BluetoothTile;
 import com.android.systemui.statusbar.policy.BluetoothController;
+import com.android.systemui.statusbar.policy.KeyguardStateController;
 
 import com.pixeldust.android.systemui.qs.tiles.dialog.BluetoothDialogFactory;
 
@@ -64,10 +65,11 @@ public class BluetoothDialogTile extends BluetoothTile {
             ActivityStarter activityStarter,
             QSLogger qsLogger,
             BluetoothController bluetoothController,
+            KeyguardStateController keyguardStateController,
             BluetoothDialogFactory bluetoothDialogFactory
     ) {
         super(host, qsEventLogger, backgroundLooper, mainHandler, falsingManager, metricsLogger,
-                statusBarStateController, activityStarter, qsLogger, bluetoothController);
+                statusBarStateController, activityStarter, qsLogger, bluetoothController, keyguardStateController);
         mHandler = mainHandler;
         mBluetoothDialogFactory = bluetoothDialogFactory;
     }
