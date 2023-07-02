@@ -18,6 +18,11 @@
     <string name="quick_settings_aod_label">AOD</string>
     <string name="quick_settings_aod_off_powersave_label">AOD aus\nEnergiesparmodus</string>
 
+    <!-- Bluetooth dialog -->
+    <string name="turn_on_bluetooth">Bluetooth</string>
+    <string name="bluetooth_is_off">Bluetooth ein</string>
+    <string name="tap_a_device_to_connect">Auf ein Gerät tippen, um es zu verbinden/trennen</string>
+
     <!-- Caffeine QS Tile -->
     <string name="quick_settings_caffeine_label">Koffein</string>
     <string name="accessibility_quick_settings_caffeine_off">Koffein an</string>
