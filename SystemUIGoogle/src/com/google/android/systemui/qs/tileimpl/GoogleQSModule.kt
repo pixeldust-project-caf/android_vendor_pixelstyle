@@ -23,6 +23,7 @@ import com.google.android.systemui.qs.tiles.ReverseChargingTile
 
 // Pixeldust qs tiles
 import com.pixeldust.android.systemui.qs.tiles.AODTile
+import com.pixeldust.android.systemui.qs.tiles.BluetoothDialogTile
 import com.pixeldust.android.systemui.qs.tiles.CaffeineTile
 import com.pixeldust.android.systemui.qs.tiles.DataSwitchTile
 import com.pixeldust.android.systemui.qs.tiles.FlashlightStrengthTile
@@ -56,6 +57,12 @@ interface GoogleQSModule {
     @IntoMap
     @StringKey(AODTile.TILE_SPEC)
     fun bindAODTile(aodTile: AODTile): QSTileImpl<*>
+
+    /** Inject BluetoothDialogTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(BluetoothDialogTile.TILE_SPEC)
+    fun bindBluetoothDialogTile(bluetoothDialogTile: BluetoothDialogTile): QSTileImpl<*>
 
     /** Inject CaffeineTile into tileMap in QSModule */
     @Binds
