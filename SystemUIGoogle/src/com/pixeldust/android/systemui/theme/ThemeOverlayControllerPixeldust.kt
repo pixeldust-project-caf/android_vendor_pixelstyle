@@ -207,53 +207,6 @@ class ThemeOverlayControllerPixeldust @Inject constructor(
         secureSettings.getIntForUser(MONET_ENGINE_LINEAR_LIGHTNESS,
             0, UserHandle.USER_CURRENT) != 0
 
-    // Seed colors
-    override fun getNeutralColor(colors: WallpaperColors) = colors.primaryColor.toArgb()
-    override fun getAccentColor(colors: WallpaperColors) = getNeutralColor(colors)
-
-    override protected fun getOverlay(color: Int, type: Int, style: Style): FabricatedOverlay {
-        // Generate color scheme
-        val colorScheme = DynamicColorScheme(
-            targets = targets,
-            seedColor = colorOverride?.takeIf { it.isNotEmpty() }
-                ?.let { Srgb(it) } ?: Srgb(color),
-            chromaFactor = chromaFactor,
-            cond = cond,
-            accurateShades = accurateShades,
-        )
-
-        val (groupKey, colorsList) = when (type) {
-            ACCENT -> "accent" to colorScheme.accentColors
-            NEUTRAL -> "neutral" to colorScheme.neutralColors
-            else -> error("Unknown type $type")
-        }
-
-        return FabricatedOverlay.Builder(context.packageName, groupKey, "android").run {
-            colorsList.withIndex().forEach { listEntry ->
-                val group = "$groupKey${listEntry.index + 1}"
-
-                listEntry.value.forEach { (shade, color) ->
-                    val colorSrgb = color.convert<Srgb>()
-                    setColor("system_${group}_$shade", colorSrgb)
-                }
-            }
-
-            // Override special modulated surface colors for performance and consistency
-            if (type == NEUTRAL) {
-                // surface light = neutral1 20 (L* 98)
-                colorsList[0][20]?.let { setColor("surface_light", it) }
-
-                // surface highlight dark = neutral1 650 (L* 35)
-                colorsList[0][650]?.let { setColor("surface_highlight_dark", it) }
-
-                // surface_header_dark_sysui = neutral1 950 (L* 5)
-                colorsList[0][950]?.let { setColor("surface_header_dark_sysui", it) }
-            }
-
-            build()
-        }
-    }
-
     companion object {
 
         private const val WHITE_LUMINANCE_MIN = 1.0
