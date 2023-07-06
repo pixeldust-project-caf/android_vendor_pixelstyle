@@ -50,7 +50,6 @@ import com.android.systemui.volume.VolumeUI
 import com.android.systemui.wmshell.WMShell
 import com.google.android.systemui.GoogleServices
 import com.google.android.systemui.smartspace.KeyguardSmartspaceStartable
-import com.pixeldust.android.systemui.theme.ThemeOverlayControllerPixeldust;
 import dagger.Binds
 import dagger.Module
 import dagger.multibindings.ClassKey
@@ -180,7 +179,7 @@ abstract class SystemUIGoogleCoreStartableModule {
     @Binds
     @IntoMap
     @ClassKey(ThemeOverlayController::class)
-    abstract fun bindThemeOverlayControllerPixeldust(sysui: ThemeOverlayControllerPixeldust): CoreStartable
+    abstract fun bindThemeOverlayController(sysui: ThemeOverlayController): CoreStartable
 
     /** Inject into ToastUI.  */
     @Binds

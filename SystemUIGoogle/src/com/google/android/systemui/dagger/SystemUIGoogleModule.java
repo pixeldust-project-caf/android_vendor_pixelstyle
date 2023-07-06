@@ -77,7 +77,6 @@ import com.android.systemui.statusbar.policy.IndividualSensorPrivacyController;
 import com.android.systemui.statusbar.policy.IndividualSensorPrivacyControllerImpl;
 import com.android.systemui.statusbar.policy.SensorPrivacyController;
 import com.android.systemui.statusbar.policy.SensorPrivacyControllerImpl;
-import com.android.systemui.theme.ThemeOverlayController;
 import com.android.systemui.volume.dagger.VolumeModule;
 
 import com.android.systemui.rotationlock.RotationLockModule;
@@ -103,8 +102,6 @@ import com.google.android.systemui.statusbar.dagger.StartCentralSurfacesGoogleMo
 import com.google.android.systemui.statusbar.KeyguardIndicationControllerGoogle;
 import com.google.android.systemui.statusbar.policy.BatteryControllerImplGoogle;
 import com.google.android.systemui.elmyra.ServiceConfigurationGoogle;
-
-import com.pixeldust.android.systemui.theme.ThemeOverlayControllerPixeldust;
 
 import javax.inject.Named;
 
@@ -250,9 +247,6 @@ public abstract class SystemUIGoogleModule {
 
     @Binds
     abstract ControlsTileResourceConfiguration bindControlsTileResourceConfiguration(GoogleControlsTileResourceConfigurationImpl configuration);
-
-    @Binds
-    abstract ThemeOverlayController provideThemeOverlayController(ThemeOverlayControllerPixeldust themeOverlayController);
 
     @Provides
     @SysUISingleton
