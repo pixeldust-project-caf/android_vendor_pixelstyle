@@ -17,8 +17,11 @@
 package com.google.android.systemui.qs.tileimpl;
 
 import com.android.systemui.qs.tileimpl.QSTileImpl
-import com.google.android.systemui.qs.tiles.BatterySaverTileGoogle;
-import com.google.android.systemui.qs.tiles.ReverseChargingTile;
+import com.android.systemui.qs.tiles.CellularTile
+import com.android.systemui.qs.tiles.WifiTile
+
+import com.google.android.systemui.qs.tiles.BatterySaverTileGoogle
+import com.google.android.systemui.qs.tiles.ReverseChargingTile
 
 // Pixeldust qs tiles
 import com.pixeldust.android.systemui.qs.tiles.AODTile
@@ -76,4 +79,16 @@ interface GoogleQSModule {
     @IntoMap
     @StringKey(ScreenshotTile.TILE_SPEC)
     fun bindScreenshotTile(screenshotTile: ScreenshotTile): QSTileImpl<*>
+
+    /** Inject CellularTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(CellularTile.TILE_SPEC)
+    fun bindCellularTile(cellularTile: CellularTile): QSTileImpl<*>
+
+    /** Inject WifiTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(WifiTile.TILE_SPEC)
+    fun bindWifiTile(wifiTile: WifiTile): QSTileImpl<*>
 }
