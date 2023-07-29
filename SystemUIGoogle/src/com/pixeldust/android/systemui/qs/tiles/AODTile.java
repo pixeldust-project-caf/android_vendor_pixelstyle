@@ -75,7 +75,7 @@ public final class AODTile extends QSTileImpl<BooleanState> implements
         mSecureSettings = secureSettings;
         mBatteryController = batteryController;
         mAodDisabled = Settings.Secure.getInt(mContext.getContentResolver(),
-                Settings.Secure.DOZE_ALWAYS_ON, 1) == 0;
+                Settings.Secure.DOZE_ALWAYS_ON, 0) == 0;
     }
 
     @Override
