@@ -13,6 +13,8 @@
         <Preference android:title="@string/screensaver_settings_title" android:key="screensaver" android:fragment="com.android.settings.dream.DreamSettings" settings:controller="com.android.settings.display.ScreenSaverPreferenceController" settings:keywords="@string/keywords_screensaver"/>
         <Preference android:persistent="false" android:title="@string/accessibility_text_reading_options_title" android:key="text_reading_options" android:fragment="com.android.settings.accessibility.TextReadingPreferenceFragment" settings:controller="com.android.settings.accessibility.TextReadingFragmentForDisplaySettingsController"/>
         <Preference android:title="@string/system_navigation_title" android:key="gesture_system_navigation_input_summary" android:fragment="com.android.settings.gestures.SystemNavigationGestureSettings" settings:controller="com.android.settings.gestures.SystemNavigationPreferenceController"/>
+        <Preference android:key="icon_manager" android:title="@string/icon_manager_title" android:summary="@string/icon_manager_summary"> <intent android:action="com.android.settings.action.STATUS_BAR_TUNER" />
+        </Preference>
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/category_name_color">
         <SwitchPreference android:title="@string/display_white_balance_title" android:key="display_white_balance" android:summary="@string/display_white_balance_summary" settings:controller="com.android.settings.display.DisplayWhiteBalancePreferenceController"/>
