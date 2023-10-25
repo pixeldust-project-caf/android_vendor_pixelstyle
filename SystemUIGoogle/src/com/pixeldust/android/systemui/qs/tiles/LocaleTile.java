@@ -46,6 +46,7 @@ import com.android.systemui.plugins.qs.QSTile.BooleanState;
 import com.android.systemui.qs.QsEventLogger;
 import com.android.systemui.qs.QSHost;
 import com.android.systemui.qs.logging.QSLogger;
+import com.android.systemui.qs.pipeline.domain.interactor.PanelInteractor;
 import com.android.systemui.qs.tileimpl.QSTileImpl;
 import com.android.systemui.R;
 
@@ -73,6 +74,8 @@ public class LocaleTile extends QSTileImpl<BooleanState> {
         .setComponent(new ComponentName(LANGUAGE_SETTINGS_PKG,
         "com.android.settings.Settings$LanguageAndInputSettingsActivity"));
 
+    private final PanelInteractor mPanelInteractor;
+
     @Inject
     public LocaleTile(
             QSHost host,
@@ -83,10 +86,12 @@ public class LocaleTile extends QSTileImpl<BooleanState> {
             MetricsLogger metricsLogger,
             StatusBarStateController statusBarStateController,
             ActivityStarter activityStarter,
-            QSLogger qsLogger
+            QSLogger qsLogger,
+            PanelInteractor panelInteractor
     ) {
         super(host, qsEventLogger, backgroundLooper, mainHandler, falsingManager, metricsLogger,
                 statusBarStateController, activityStarter, qsLogger);
+        mPanelInteractor = panelInteractor;
         LANGUAGE_SETTINGS.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         updateLocaleList();
     }
@@ -130,7 +135,7 @@ public class LocaleTile extends QSTileImpl<BooleanState> {
         @Override
         public void run() {
             if (!mLocaleList.get(0).equals(currentLocaleBackup)) {
-                //mHost.collapsePanels();
+                mPanelInteractor.collapsePanels();
                 LocalePicker.updateLocales(mLocaleList);
             }
             currentLocaleBackup = null;
@@ -203,7 +208,7 @@ public class LocaleTile extends QSTileImpl<BooleanState> {
     }
 
     protected void launchLanguageSettings() {
-        //mHost.collapsePanels();
+        mPanelInteractor.collapsePanels();
         mContext.startActivity(LANGUAGE_SETTINGS);
         refreshState();
     }
