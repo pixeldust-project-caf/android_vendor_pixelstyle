@@ -23,11 +23,8 @@ import com.google.android.systemui.qs.tiles.ReverseChargingTile;
 // Pixeldust qs tiles
 import com.pixeldust.android.systemui.qs.tiles.AODTile
 import com.pixeldust.android.systemui.qs.tiles.CaffeineTile
-import com.pixeldust.android.systemui.qs.tiles.DataSwitchTile
 import com.pixeldust.android.systemui.qs.tiles.LocaleTile
 import com.pixeldust.android.systemui.qs.tiles.ScreenshotTile
-import com.pixeldust.android.systemui.qs.tiles.SyncTile
-import com.pixeldust.android.systemui.qs.tiles.VpnTile
 
 import dagger.Binds
 import dagger.Module
@@ -61,12 +58,6 @@ interface GoogleQSModule {
     @StringKey(CaffeineTile.TILE_SPEC)
     fun bindCaffeineTile(caffeineTile: CaffeineTile): QSTileImpl<*>
 
-    /** Inject DataSwitchTile into tileMap in QSModule */
-    @Binds
-    @IntoMap
-    @StringKey(DataSwitchTile.TILE_SPEC)
-    fun bindDataSwitchTile(dataSwitchTile: DataSwitchTile): QSTileImpl<*>
-
     /** Inject LocaleTile into tileMap in QSModule */
     @Binds
     @IntoMap
@@ -78,16 +69,4 @@ interface GoogleQSModule {
     @IntoMap
     @StringKey(ScreenshotTile.TILE_SPEC)
     fun bindScreenshotTile(screenshotTile: ScreenshotTile): QSTileImpl<*>
-
-    /** Inject SyncTile into tileMap in QSModule */
-    @Binds
-    @IntoMap
-    @StringKey(SyncTile.TILE_SPEC)
-    fun bindSyncTile(syncTile: SyncTile): QSTileImpl<*>
-
-    /** Inject VpnTile into tileMap in QSModule */
-    @Binds
-    @IntoMap
-    @StringKey(VpnTile.TILE_SPEC)
-    fun bindVpnTile(vpnTile: VpnTile): QSTileImpl<*>
 }
