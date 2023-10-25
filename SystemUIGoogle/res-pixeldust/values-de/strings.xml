@@ -34,13 +34,9 @@
     <string name="quick_settings_locale_label">Sprache</string>
     <string name="quick_settings_locale_more_locales_toast">Um die Kachel zu nutzen, müssen erst weitere Sprachen hinzugefügt werden.</string>
 
-    <!-- PixelDust Settings Tile -->
-    <string name="quick_settings_pixeldust_label">PixelDust Einstellungen</string>
-
     <!-- Screenshot QS tile -->
     <string name="quick_settings_screenshot_title">Bildschirmfoto</string>
-    <string name="quick_settings_screenshot_label">Ganzen Bildschirm aufnehmen</string>
-    <string name="quick_settings_region_screenshot_label">Bildauschnitt aufnehmen</string>
+    <string name="quick_settings_screenshot_label">aufnehmen</string>
 
      <!-- Sync QS Tile -->
     <string name="quick_settings_sync_label">Sync</string>

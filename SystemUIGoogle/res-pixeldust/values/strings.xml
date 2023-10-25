@@ -36,13 +36,9 @@
     <string name="quick_settings_locale_label">Language</string>
     <string name="quick_settings_locale_more_locales_toast">Please configure multiple languages to enable toggle functionality</string>
 
-    <!-- PixelDust Settings Tile -->
-    <string name="quick_settings_pixeldust_label">PixelDust Settings</string>
-
     <!-- Screenshot QS tile -->
     <string name="quick_settings_screenshot_title">Screenshot</string>
-    <string name="quick_settings_screenshot_label">Full screenshot</string>
-    <string name="quick_settings_region_screenshot_label">Partial screenshot</string>
+    <string name="quick_settings_screenshot_label">Start</string>
 
     <!-- Sync QS Tile -->
     <string name="quick_settings_sync_label">Sync</string>

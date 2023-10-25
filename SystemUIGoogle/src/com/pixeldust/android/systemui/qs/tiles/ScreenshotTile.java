@@ -15,9 +15,6 @@
 
 package com.pixeldust.android.systemui.qs.tiles;
 
-import static android.view.WindowManager.TAKE_SCREENSHOT_FULLSCREEN;
-import static android.view.WindowManager.TAKE_SCREENSHOT_SELECTED_REGION;
-
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
@@ -42,7 +39,9 @@ import com.android.systemui.qs.QsEventLogger;
 import com.android.systemui.plugins.qs.QSTile.BooleanState;
 import com.android.systemui.plugins.statusbar.StatusBarStateController;
 import com.android.systemui.qs.QSHost;
+import com.android.systemui.qs.QSTileHost;
 import com.android.systemui.qs.logging.QSLogger;
+import com.android.systemui.qs.pipeline.domain.interactor.PanelInteractor;
 import com.android.systemui.qs.tileimpl.QSTileImpl;
 
 import javax.inject.Inject;
@@ -52,9 +51,9 @@ public class ScreenshotTile extends QSTileImpl<BooleanState> {
 
     public static final String TILE_SPEC = "screenshot";
 
-    private boolean mRegion = false;
     private Handler mHandler;
     private ScreenshotHelper mScreenshotHelper;
+    private final PanelInteractor mPanelInteractor;
 
     @Inject
     public ScreenshotTile(
@@ -66,11 +65,13 @@ public class ScreenshotTile extends QSTileImpl<BooleanState> {
             MetricsLogger metricsLogger,
             StatusBarStateController statusBarStateController,
             ActivityStarter activityStarter,
-            QSLogger qsLogger
+            QSLogger qsLogger,
+            PanelInteractor panelInteractor
     ) {
         super(host, qsEventLogger, backgroundLooper, mainHandler, falsingManager, metricsLogger,
                 statusBarStateController, activityStarter, qsLogger);
         mHandler = mainHandler;
+        mPanelInteractor = panelInteractor;
         mScreenshotHelper = new ScreenshotHelper(mContext);
     }
 
@@ -90,19 +91,21 @@ public class ScreenshotTile extends QSTileImpl<BooleanState> {
 
     @Override
     protected void handleClick(@Nullable View view) {
-        mRegion = !mRegion;
-        refreshState();
+        takeScreenshot();
     }
 
     @Override
     public void handleLongClick(@Nullable View view) {
-        //mHost.collapsePanels();
+        takeScreenshot();
+    }
 
+    private void takeScreenshot() {
+        mPanelInteractor.collapsePanels();
         //finish collapsing the panel
         try {
-             Thread.sleep(1000); //1s
+             Thread.sleep(2000); //2s
         } catch (InterruptedException ie) {}
-        mScreenshotHelper.takeScreenshot(mRegion ? TAKE_SCREENSHOT_SELECTED_REGION : TAKE_SCREENSHOT_FULLSCREEN, WindowManager.ScreenshotSource.SCREENSHOT_OTHER, mHandler, null);
+        mScreenshotHelper.takeScreenshot(WindowManager.ScreenshotSource.SCREENSHOT_OTHER, mHandler, null);
     }
 
     @Override
@@ -112,23 +115,15 @@ public class ScreenshotTile extends QSTileImpl<BooleanState> {
 
     @Override
     public CharSequence getTileLabel() {
-        return mContext.getString(R.string.quick_settings_screenshot_label);
+        return mContext.getString(R.string.quick_settings_screenshot_title);
     }
 
     @Override
     protected void handleUpdateState(BooleanState state, Object arg) {
-        if (mRegion) {
-            state.label = mContext.getString(R.string.quick_settings_screenshot_title);
-            state.icon = ResourceIcon.get(R.drawable.ic_qs_region_screenshot);
-            state.contentDescription =  mContext.getString(
-                    R.string.quick_settings_region_screenshot_label);
-            state.secondaryLabel = mContext.getString(R.string.quick_settings_region_screenshot_label);
-        } else {
-            state.label = mContext.getString(R.string.quick_settings_screenshot_title);
-            state.icon = ResourceIcon.get(R.drawable.ic_qs_screenshot);
-            state.contentDescription =  mContext.getString(
-                    R.string.quick_settings_screenshot_label);
-            state.secondaryLabel = mContext.getString(R.string.quick_settings_screenshot_label);
-        }
+        state.label = mContext.getString(R.string.quick_settings_screenshot_title);
+        state.icon = ResourceIcon.get(R.drawable.ic_qs_screenshot);
+        state.contentDescription =  mContext.getString(
+                R.string.quick_settings_screenshot_label);
+        state.secondaryLabel = mContext.getString(R.string.quick_settings_screenshot_label);
     }
 }
