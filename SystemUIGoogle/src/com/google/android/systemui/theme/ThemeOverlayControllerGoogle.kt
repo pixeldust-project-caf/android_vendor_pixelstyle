@@ -58,8 +58,7 @@ class ThemeOverlayControllerGoogle @Inject constructor(
     featureFlags: FeatureFlags,
     @Main resources: Resources,
     wakefulnessLifecycle: WakefulnessLifecycle,
-    uiModeManager: UiModeManager,
-    configurationController: ConfigurationController
+    uiModeManager: UiModeManager
 ) : ThemeOverlayController(
     context,
     broadcastDispatcher,
@@ -76,8 +75,7 @@ class ThemeOverlayControllerGoogle @Inject constructor(
     featureFlags,
     resources,
     wakefulnessLifecycle,
-    uiModeManager,
-    configurationController
+    uiModeManager
 ) {
 
 }
