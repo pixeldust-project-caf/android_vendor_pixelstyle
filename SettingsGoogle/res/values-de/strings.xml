@@ -12,7 +12,9 @@
     <string name="adaptive_alert_vibration_summary">Verringert die Vibrationsstärke, wenn das Smartphone still liegt und das Display nach oben zeigt</string>
     <string name="adaptive_alert_vibration_title">Intelligente Benachrichtigungsvibration</string>
     <string name="adaptive_charging">Adaptives Laden</string>
+    <string name="adaptive_charging_title">Adaptives Laden</string>
     <string name="adaptive_charging_description">Durch konstantes Laden während längerer Ladezeiten die Lebensdauer des Akkus erhöhen. Wurde auf Grundlage deines Nutzungszyklus aktiviert.</string>
+    <string name="adaptive_charging_footer">Um die Lebensdauer des Akkus zu verlängern, lernt Ihr Smartphone Ihre Laderoutine und wartet, bis es vollständig aufgeladen werden muss.</string>
     <string name="adaptive_charging_time_estimate"><b>Adaptives Laden</b> • Vollständig aufgeladen bis %1$s</string>
     <string name="ambient_display_wake_screen_footer"><annotation link="link">Einstellungen</annotation></string>
     <string name="app_and_notification_dashboard_summary">Assistant, kürzlich geöffnete Apps, Standard-Apps</string>
