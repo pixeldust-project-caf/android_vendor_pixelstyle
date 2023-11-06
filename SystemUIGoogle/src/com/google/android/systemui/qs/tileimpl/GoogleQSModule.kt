@@ -27,6 +27,7 @@ import com.google.android.systemui.qs.tiles.ReverseChargingTile
 import com.pixeldust.android.systemui.qs.tiles.AODTile
 import com.pixeldust.android.systemui.qs.tiles.BluetoothDialogTile
 import com.pixeldust.android.systemui.qs.tiles.CaffeineTile
+import com.pixeldust.android.systemui.qs.tiles.FlashlightStrengthTile
 import com.pixeldust.android.systemui.qs.tiles.LocaleTile
 import com.pixeldust.android.systemui.qs.tiles.ScreenshotTile
 
@@ -67,6 +68,12 @@ interface GoogleQSModule {
     @IntoMap
     @StringKey(CaffeineTile.TILE_SPEC)
     fun bindCaffeineTile(caffeineTile: CaffeineTile): QSTileImpl<*>
+
+    /** Inject FlashlightStrengthTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(FlashlightStrengthTile.TILE_SPEC)
+    fun bindFlashlightStrengthTile(flashlightStrengthTile: FlashlightStrengthTile): QSTileImpl<*>
 
     /** Inject LocaleTile into tileMap in QSModule */
     @Binds
