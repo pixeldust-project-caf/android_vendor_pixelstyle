@@ -19,43 +19,41 @@ package com.pixeldust.android.systemui.qs.tiles;
 
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.database.ContentObserver;
 import android.os.Handler;
 import android.os.LocaleList;
 import android.os.Looper;
-import android.provider.Settings;
-import android.widget.Toast;
+import android.service.quicksettings.Tile;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
 import com.android.internal.app.LocalePicker;
 import com.android.internal.logging.MetricsLogger;
 import com.android.internal.logging.nano.MetricsProto.MetricsEvent;
+import com.android.systemui.R;
 import com.android.systemui.dagger.qualifiers.Background;
 import com.android.systemui.dagger.qualifiers.Main;
 import com.android.systemui.plugins.ActivityStarter;
 import com.android.systemui.plugins.FalsingManager;
-import com.android.systemui.plugins.statusbar.StatusBarStateController;
 import com.android.systemui.plugins.qs.QSTile;
-import com.android.systemui.plugins.qs.QSTile.BooleanState;
-import com.android.systemui.qs.QsEventLogger;
+import com.android.systemui.plugins.qs.QSTile.State;
+import com.android.systemui.plugins.statusbar.StatusBarStateController;
 import com.android.systemui.qs.QSHost;
+import com.android.systemui.qs.QsEventLogger;
 import com.android.systemui.qs.logging.QSLogger;
 import com.android.systemui.qs.pipeline.domain.interactor.PanelInteractor;
 import com.android.systemui.qs.tileimpl.QSTileImpl;
-import com.android.systemui.R;
 
 import java.util.Locale;
 
 import javax.inject.Inject;
 
 /** Quick settings tile: Locale **/
-public class LocaleTile extends QSTileImpl<BooleanState> {
+public class LocaleTile extends QSTileImpl<State> {
 
     public static final String TILE_SPEC = "locale";
 
@@ -69,17 +67,12 @@ public class LocaleTile extends QSTileImpl<BooleanState> {
     // Allow multiple clicks to find the desired locale without immediately applying
     private static final int TOGGLE_DELAY = 800;
 
-    private static final String LANGUAGE_SETTINGS_PKG = "com.android.settings";
-    private static final Intent LANGUAGE_SETTINGS = new Intent(Intent.ACTION_MAIN)
-        .setComponent(new ComponentName(LANGUAGE_SETTINGS_PKG,
-        "com.android.settings.Settings$LanguageAndInputSettingsActivity"));
-
     private final PanelInteractor mPanelInteractor;
 
     @Inject
     public LocaleTile(
             QSHost host,
-            QsEventLogger qsEventLogger,
+            QsEventLogger uiEventLogger,
             @Background Looper backgroundLooper,
             @Main Handler mainHandler,
             FalsingManager falsingManager,
@@ -89,16 +82,15 @@ public class LocaleTile extends QSTileImpl<BooleanState> {
             QSLogger qsLogger,
             PanelInteractor panelInteractor
     ) {
-        super(host, qsEventLogger, backgroundLooper, mainHandler, falsingManager, metricsLogger,
+        super(host, uiEventLogger, backgroundLooper, mainHandler, falsingManager, metricsLogger,
                 statusBarStateController, activityStarter, qsLogger);
         mPanelInteractor = panelInteractor;
-        LANGUAGE_SETTINGS.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         updateLocaleList();
     }
 
     @Override
-    public BooleanState newTileState() {
-        return new BooleanState();
+    public State newTileState() {
+        return new QSTile.State();
     }
 
     @Override
@@ -108,13 +100,9 @@ public class LocaleTile extends QSTileImpl<BooleanState> {
     }
 
     @Override
-    protected void handleLongClick(@Nullable View view) {
-        launchLanguageSettings();
-    }
-
-    @Override
-    public void handleSetListening(boolean listening) {
-        // Do nothing
+    protected void handleSecondaryClick(@Nullable View view) {
+        if (checkToggleDisabled()) return;
+        toggleLocale();
     }
 
     private void toggleLocale() {
@@ -144,7 +132,8 @@ public class LocaleTile extends QSTileImpl<BooleanState> {
 
     @Override
     public Intent getLongClickIntent() {
-        return LANGUAGE_SETTINGS;
+        return new Intent().setComponent(new ComponentName(
+            "com.android.settings", "com.android.settings.LanguageSettings"));
     }
 
     @Override
@@ -158,22 +147,22 @@ public class LocaleTile extends QSTileImpl<BooleanState> {
     }
 
     @Override
-    protected void handleUpdateState(BooleanState state, Object arg) {
+    protected void handleUpdateState(State state, Object arg) {
         state.icon = ResourceIcon.get(
                 currentLocaleBackup == null || currentLocaleBackup.equals(mLocaleList.get(0)) ?
                         R.drawable.ic_qs_locale :
                         R.drawable.ic_qs_locale_pending);
-        state.label = mContext.getString(R.string.quick_settings_locale_label);
-        state.secondaryLabel = mLocaleList.get(0).getDisplayLanguage();
+        state.label = mLocaleList.get(0).getDisplayLanguage();
     }
 
-    public void setListening(boolean listening) {
+    @Override
+    public void handleSetListening(boolean listening) {
         if (mListening == listening) return;
         mListening = listening;
         if (listening) {
             final IntentFilter filter = new IntentFilter();
             filter.addAction(Intent.ACTION_LOCALE_CHANGED);
-            mContext.registerReceiver(mReceiver, filter);
+            mContext.registerReceiver(mReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         } else {
             mContext.unregisterReceiver(mReceiver);
         }
@@ -197,7 +186,7 @@ public class LocaleTile extends QSTileImpl<BooleanState> {
     private boolean checkToggleDisabled() {
         updateLocaleList();
         if (mLocaleList.size() <= 1) {
-            launchLanguageSettings();
+            handleLongClick(null);
             Toast.makeText(mContext,
                     mContext.getString(R.string.quick_settings_locale_more_locales_toast),
                     Toast.LENGTH_LONG).show();
@@ -206,11 +195,4 @@ public class LocaleTile extends QSTileImpl<BooleanState> {
             return false;
         }
     }
-
-    protected void launchLanguageSettings() {
-        mPanelInteractor.collapsePanels();
-        mContext.startActivity(LANGUAGE_SETTINGS);
-        refreshState();
-    }
-
 }
